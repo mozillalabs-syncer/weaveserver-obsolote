@@ -1,0 +1,195 @@
+#!/usr/bin/perl
+
+# ***** BEGIN LICENSE BLOCK *****
+# Version: MPL 1.1/GPL 2.0/LGPL 2.1
+#
+# The contents of this file are subject to the Mozilla Public License Version
+# 1.1 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS" basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+# for the specific language governing rights and limitations under the
+# License.
+#
+# The Original Code is Weave Basic Object Server
+#
+# The Initial Developer of the Original Code is
+# Mozilla Labs.
+# Portions created by the Initial Developer are Copyright (C) 2008
+# the Initial Developer. All Rights Reserved.
+#
+# Contributor(s):
+#	Toby Elliott (telliott@mozilla.com)
+#
+# Alternatively, the contents of this file may be used under the terms of
+# either the GNU General Public License Version 2 or later (the "GPL"), or
+# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# in which case the provisions of the GPL or the LGPL are applicable instead
+# of those above. If you wish to allow use of your version of this file only
+# under the terms of either the GPL or the LGPL, and not to allow others to
+# use your version of this file under the terms of the MPL, indicate your
+# decision by deleting the provisions above and replace them with the notice
+# and other provisions required by the GPL or the LGPL. If you do not delete
+# the provisions above, a recipient may use your version of this file under
+# the terms of any one of the MPL, the GPL or the LGPL.
+#
+# ***** END LICENSE BLOCK *****
+
+use strict;
+use LWP;
+use HTTP::Request;
+use HTTP::Request::Common qw/PUT GET POST/;
+
+
+my $PROTOCOL = 'http';
+my $SERVER = 'localhost';
+my $USERNAME = 'test_user';
+my $PASSWORD = 'test123';
+
+my $ua = LWP::UserAgent->new;
+$ua->agent("Weave Server Test/0.3");
+
+
+#clear the user
+my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test");
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "delete: " . $ua->request($req)->content() . "\n";
+my $id = 0;
+
+#upload 10 items individually
+print "Adding 10 records:\n";
+foreach (1..10)
+{
+
+	$id++;
+	my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$req->content($json);
+	$req->content_type('application/x-www-form-urlencoded');
+	
+	print $id . ": " . $ua->request($req)->content() . "\n";
+}
+
+#upload 10 items in batch
+my $batch = "";
+foreach (1..10)
+{
+
+	$id++;
+	$batch .= ', {"id": "' . $id . '","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+}
+
+$batch =~ s/^,/[/;
+$batch .= "]";
+
+$req = POST "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test", ['wbo' => $batch];
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content_type('application/x-www-form-urlencoded');
+
+print "batch upload: " . $ua->request($req)->status_line() . "\n";
+
+#do a replace
+my $json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content($json);
+$req->content_type('application/x-www-form-urlencoded');
+
+print "replace: " . $ua->request($req)->content() . "\n";
+
+#do a bad put (no id)
+
+my $json = '{"id": "","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content($json);
+$req->content_type('application/x-www-form-urlencoded');
+
+print "bad PUT (no id): " . $ua->request($req)->content() . "\n";
+
+#do a bad put (bad json)
+
+$json = '{"id": ","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content($json);
+$req->content_type('application/x-www-form-urlencoded');
+
+print "bad PUT (bad json): " . $ua->request($req)->content() . "\n";
+
+
+#do a bad put (no auth)
+
+$json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+$req->content($json);
+$req->content_type('application/x-www-form-urlencoded');
+
+print "bad PUT (no auth): " . $ua->request($req)->content() . "\n";
+
+#do a bad put (wrong pw)
+
+$json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+$req->authorization_basic($USERNAME, 'badpassword');
+$req->content($json);
+$req->content_type('application/x-www-form-urlencoded');
+
+print "bad PUT (wrong pw): " . $ua->request($req)->content() . "\n";
+
+
+#bad post (bad json);
+$batch =~ s/\]$//;
+$req = POST "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test", ['wbo' => $batch];
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content_type('application/x-www-form-urlencoded');
+print "bad batch upload (bad json): " . $ua->request($req)->content() . "\n";
+
+
+#post with some bad records
+
+$batch .= "]";
+$batch =~ s/parentid":"2/parentid":"3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333/g;
+$req = POST "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test", ['wbo' => $batch];
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content_type('application/x-www-form-urlencoded');
+print "mixed batch upload (bad parentids on some): " . $ua->request($req)->content() . "\n";
+
+
+# should return ["1", "2" .. "20"]
+$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "should return [\"1\", \"2\" .. \"20\"] (in some order): " . $ua->request($req)->content() . "\n";
+
+# should return the user id record for #4
+$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/4";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "should return record 4: " . $ua->request($req)->content() . "\n";
+
+# should return about half the ids
+$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?modified=2454755";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "modified after halftime: " . $ua->request($req)->content() . "\n";
+
+# should return about one-third the ids
+$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?parentid=1";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "parent ids (mod 3 = 1): " . $ua->request($req)->content() . "\n";
+
+# mix our params
+$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?parentid=1&modified=2454755";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "parentid and modified: " . $ua->request($req)->content() . "\n";
+
+#as above, but full records
+$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?parentid=1&modified=2454755&full=1";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "parentid and modified (full records): " . $ua->request($req)->content() . "\n";
+
+#and clear the user again
+my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test");
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "delete: " . $ua->request($req)->content() . "\n";

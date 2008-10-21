@@ -1,0 +1,573 @@
+<?php
+
+# ***** BEGIN LICENSE BLOCK *****
+# Version: MPL 1.1/GPL 2.0/LGPL 2.1
+#
+# The contents of this file are subject to the Mozilla Public License Version
+# 1.1 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS" basis,
+# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+# for the specific language governing rights and limitations under the
+# License.
+#
+# The Original Code is Weave Basic Object Server
+#
+# The Initial Developer of the Original Code is
+# Mozilla Labs.
+# Portions created by the Initial Developer are Copyright (C) 2008
+# the Initial Developer. All Rights Reserved.
+#
+# Contributor(s):
+#	Toby Elliott (telliott@mozilla.com)
+#
+# Alternatively, the contents of this file may be used under the terms of
+# either the GNU General Public License Version 2 or later (the "GPL"), or
+# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# in which case the provisions of the GPL or the LGPL are applicable instead
+# of those above. If you wish to allow use of your version of this file only
+# under the terms of either the GPL or the LGPL, and not to allow others to
+# use your version of this file under the terms of the MPL, indicate your
+# decision by deleting the provisions above and replace them with the notice
+# and other provisions required by the GPL or the LGPL. If you do not delete
+# the provisions above, a recipient may use your version of this file under
+# the terms of any one of the MPL, the GPL or the LGPL.
+#
+# ***** END LICENSE BLOCK *****
+	
+require_once 'weave_basic_object.inc';
+
+
+#PDO wrapper to an underlying SQLite storage engine.
+#Note that username is only needed for opening the file. All operations after that will be on that user.
+
+interface WeaveStorage
+{
+	function __construct($username, $dbh = null);
+
+	function open_connection();
+
+	function get_connection();
+	
+	function store_object(&$wbo);
+	
+	function delete_object($collection, $id);
+	
+	function delete_collection($collection);
+	
+	function retrieve_object($collection, $id);
+	
+	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null);
+
+	function delete_user();
+}
+
+
+
+
+#Mysql version of the above.
+#Note that this object does not contain any database setup information. It assumes that the mysql
+#instance is already fully configured
+
+#create table wbo
+#(
+# username varchar(32),
+# collection varchar(64),
+# id varchar(64),
+# parentid varchar(64),
+# modified float,
+# encoding varchar(16),
+# payload text,
+# primary key(username, collection, id),
+# index parentindex(username, collection, parentid),
+# index modified(username, collection, modified)
+#) engine=InnoDB;
+
+class WeaveStorageMysql implements WeaveStorage
+{
+	var $_username;
+	var $_dbh;
+	
+	function __construct($username, $dbh = null) 
+	{
+		$this->_username = $username;
+		if (!$dbh)
+		{
+			$this->open_connection();
+		}
+		elseif ($dbh == 'no_connect')
+		{
+			# do nothing. No connection.
+		}
+		else
+		{
+			$this->_dbh = $dbh;
+		}
+	}
+
+	function open_connection() 
+	{ 
+		$hostname = getenv('WEAVE_MYSQL_STORE_HOST');
+		$dbname = getenv('WEAVE_MYSQL_STORE_DB');
+		$username = getenv('WEAVE_MYSQL_STORE_USER');
+		$password = getenv('WEAVE_MYSQL_STORE_PASS');
+		
+		try
+		{
+			$this->_dbh = new PDO('mysql:host=' . $hostname . ';dbname=' . $dbname, $username, $password);
+			$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		}
+		catch( PDOException $exception )
+		{
+				error_log($exception->getMessage());
+				throw new Exception("Database unavailable", 503);
+		}
+		
+	}
+	
+	function get_connection()
+	{
+		return $this->_dbh;
+	}
+	
+	function store_object(&$wbo) 
+	{
+		try
+		{
+			$insert_stmt = 'replace into wbo (username, id, collection, parentid, encryption, modified, encoding, payload) values (:username, :id, :collection, :parentid, :encryption, :modified, :encoding, :payload)';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->bindParam(':id', $wbo->id());
+			$sth->bindParam(':collection', $wbo->collection());
+			$sth->bindParam(':parentid', $wbo->parentid());
+			$sth->bindParam(':encryption', $wbo->encryption());
+			$sth->bindParam(':modified', $wbo->modified());
+			$sth->bindParam(':encoding', $wbo->encoding());
+			$sth->bindParam(':payload', $wbo->payload());
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("store_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	
+	}
+	
+	function delete_object($collection, $id)
+	{
+		try
+		{
+			$delete_stmt = 'delete from wbo where username = :username and collection = :collection and id = :id';
+			$sth = $this->_dbh->prepare($delete_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->bindParam(':collection', $collection);
+			$sth->bindParam(':id', $id);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("delete_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	}
+	
+	function delete_collection($collection)
+	{
+		try
+		{
+			$delete_stmt = 'delete from wbo where username = :username and collection = :collection';
+			$sth = $this->_dbh->prepare($delete_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->bindParam(':collection', $collection);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("delete_collection: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	}
+	
+	function retrieve_object($collection, $id)
+	{
+		try
+		{
+			$select_stmt = 'select * from wbo where username = :username and collection = :collection and id = :id';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->bindParam(':collection', $collection);
+			$sth->bindParam(':id', $id);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("retrieve_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$result = $sth->fetch(PDO::FETCH_ASSOC);
+		
+		$wbo = new wbo();
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, json_decode($result{'payload'}));
+		return $wbo;
+	}
+	
+	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null)
+	{
+		$full_list = $full ? '*' : 'id';
+			
+		
+		$select_stmt = "select $full_list from wbo where username = :username and collection = ?";
+		$params[] = $this->_username;
+		$params[] = $collection;
+		
+		
+		if ($id)
+		{
+			$select_stmt .= " and id = ?";
+			$params[] = $id;
+		}
+		
+		if ($parentid)
+		{
+			$select_stmt .= " and parentid = ?";
+			$params[] = $parentid;
+		}
+		
+		if ($modified)
+		{
+			$select_stmt .= " and modified >= ?";
+			$params[] = $modified;
+		}
+	
+		if ($limit)
+		{
+			$select_stmt .= " limit ?";
+			$params[] = $limit;
+			if ($offset)
+			{
+				$select_stmt .= " offset ?";
+				$params[] = $offset;
+			}
+		}
+		
+		try
+		{
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->execute($params);
+		}
+		catch( PDOException $exception )
+		{
+			error_log("retrieve_collection: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$ids = array();
+		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
+		{
+			if ($full)
+			{
+				$wbo = new wbo();
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, json_decode($result{'payload'}));
+				$ids[] = $wbo;
+			}
+			else
+			{
+				$ids[] = $result{'id'};
+			}
+		}
+		return $ids;
+	}
+
+	function delete_user()
+	{
+		try
+		{
+			$delete_stmt = 'delete from wbo where username = :username';
+			$sth = $this->_dbh->prepare($delete_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->execute();
+
+		}
+		catch( PDOException $exception )
+		{
+			error_log("delete_user: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+
+	}
+}
+
+
+
+
+#Sqlite version of the object
+class WeaveStorageSqlite implements WeaveStorage
+{
+	var $_username;
+	var $_dbh;	
+	
+	function __construct($username, $dbh = null)
+	{
+		$this->_username = $username;
+		if (!$dbh)
+		{
+			$this->open_connection();
+		}
+		elseif ($dbh == 'no_connect')
+		{
+			# do nothing. No connection.
+		}
+		else
+		{
+			$this->_dbh = $dbh;
+		}
+	}
+	
+	function open_connection()
+	{
+		$username_md5 = md5($this->_username);
+		$db_name = getenv('WEAVE_SQLITE_STORE_DIRECTORY') . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
+
+		if (!file_exists($db_name))
+		{
+			throw new Exception("User not found", 404);
+		}
+
+		try
+		{
+			$this->_dbh = new PDO('sqlite:' . $db_name);
+			$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		}
+		catch( PDOException $exception )
+		{
+			throw new Exception("Database unavailable", 503);
+		}
+	}
+
+	function get_connection()
+	{
+		return $this->_dbh;
+	}
+		
+	function store_object(&$wbo)
+	{
+		
+		try
+		{
+			$insert_stmt = 'replace into wbo (id, collection, parentid, encryption, modified, encoding, payload) values (:id, :collection, :parentid, :encryption, :modified, :encoding, :payload)';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':id', $wbo->id());
+			$sth->bindParam(':collection', $wbo->collection());
+			$sth->bindParam(':parentid', $wbo->parentid());
+			$sth->bindParam(':encryption', $wbo->encryption());
+			$sth->bindParam(':modified', $wbo->modified());
+			$sth->bindParam(':encoding', $wbo->encoding());
+			$sth->bindParam(':payload', $wbo->payload());
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("store_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	}
+	
+	function delete_object($collection, $id)
+	{
+		try
+		{
+			$delete_stmt = 'delete from wbo where collection = :collection and id = :id';
+			$sth = $this->_dbh->prepare($delete_stmt);
+			$sth->bindParam(':collection', $collection);
+			$sth->bindParam(':id', $id);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("delete_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	}
+	
+	function delete_collection($collection)
+	{
+		try
+		{
+			$delete_stmt = 'delete from wbo where collection = :collection';
+			$sth = $this->_dbh->prepare($delete_stmt);
+			$sth->bindParam(':collection', $collection);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("delete_collection: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	}
+	
+	function retrieve_object($collection, $id)
+	{
+		try
+		{
+			$select_stmt = 'select * from wbo where collection = :collection and id = :id';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':collection', $collection);
+			$sth->bindParam(':id', $id);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("retrieve_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$result = $sth->fetch(PDO::FETCH_ASSOC);
+		
+		$wbo = new wbo();
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, json_decode($result{'payload'}));
+		return $wbo;
+	}
+	
+	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null)
+	{
+		$full_list = $full ? '*' : 'id';
+			
+		
+		$select_stmt = "select $full_list from wbo where collection = ?";
+		$params[] = $collection;
+		
+		
+		if ($id)
+		{
+			$select_stmt .= " and id = ?";
+			$params[] = $id;
+		}
+		
+		if ($parentid)
+		{
+			$select_stmt .= " and parentid = ?";
+			$params[] = $parentid;
+		}
+		
+		if ($modified)
+		{
+			$select_stmt .= " and modified >= ?";
+			$params[] = $modified;
+		}
+	
+		if ($limit)
+		{
+			$select_stmt .= " limit ?";
+			$params[] = $limit;
+			if ($offset)
+			{
+				$select_stmt .= " offset ?";
+				$params[] = $offset;
+			}
+		}
+		
+		try
+		{
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->execute($params);
+		}
+		catch( PDOException $exception )
+		{
+			error_log("retrieve_collection: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$ids = array();
+		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
+		{
+			if ($full)
+			{
+				$wbo = new wbo();
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, json_decode($result{'payload'}));
+				$ids[] = $wbo;
+			}
+			else
+			{
+				$ids[] = $result{'id'};
+			}
+		}
+		return $ids;
+	
+	}
+
+
+	#sets up the tables within the newly created db server 
+	function initialize_user_db()
+	{
+		$username_md5 = md5($username);
+		
+		
+		#make sure our path exists
+		$path = getenv('WEAVE_SQLITE_DIRECTORY') . '/' . $username_md5{0};
+		if (!is_dir($path)) { mkdir ($path); }
+		$path .= '/' . $username_md5{1};
+		if (!is_dir($path)) { mkdir ($path); }
+		$path .= '/' . $username_md5{2};
+		if (!is_dir($path)) { mkdir ($path); }
+		
+		#create our user's db file
+		try
+		{
+			$dbh = new PDO('sqlite:' . $path . '/' . $username_md5);
+			$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$create_statement = <<< end
+create table wbo 
+(
+ id text,
+ collection text,
+ parentid text,
+ encryption text,
+ modified real,
+ encoding text,
+ payload text,
+ primary key (collection,id)
+)
+end;
+
+			$index1 = 'create index idindex on wbo (id)';
+			$index2 = 'create index parentindex on wbo (parentid)';
+			$index3 = 'create index modifiedindex on wbo (modified DESC)';
+		
+		
+			$sth = $dbh->prepare($create_statement);
+			$sth->execute();
+			$sth = $dbh->prepare($index1);
+			$sth->execute();
+			$sth = $dbh->prepare($index2);
+			$sth->execute();
+			$sth = $dbh->prepare($index3);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("initialize_user_db:" . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+	}
+
+	function delete_user()
+	{
+		$username_md5 = md5($this->_username);
+		$db_name = $this->_path . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
+		unlink($db_name);
+	}
+}
+
+
+ ?>
