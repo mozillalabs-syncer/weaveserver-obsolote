@@ -49,6 +49,10 @@ interface WeaveAuthentication
 	
 	function create_user($username, $password);
 	
+	function update_password($username, $password);
+
+	function user_exists($username);
+
 	function authenticate_user($username, $password);
 	
 	function delete_user($username);
@@ -77,6 +81,11 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 		return 1;
 	}
 	
+	function update_password($username, $password)
+	{
+		return 1;
+	}
+
 	function authenticate_user($username, $password)
 	{
 		return 1;
@@ -85,6 +94,11 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 	function delete_user($username)
 	{
 		return 1;
+	}
+	
+	function user_exists($username)
+	{
+		return 0;
 	}
 }
 
@@ -150,6 +164,15 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 
 	function create_user($username, $password)
 	{ 
+		if (!$username)
+		{
+			throw new Exception("Username missing", 404);
+		}
+		if (!$password)
+		{
+			throw new Exception("Password missing", 404);
+		}
+
 		try
 		{
 			$insert_stmt = 'insert into users (username, md5) values (:username, :md5)';
@@ -161,9 +184,60 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		catch( PDOException $exception )
 		{
 			error_log("create_user: " . $exception->getMessage());
+			#check for primary key violation here...
 			throw new Exception("Database unavailable", 503);
 		}
 		return 1;
+	}
+
+	function update_password($username, $password)
+	{
+		if (!$username)
+		{
+			throw new Exception("Username missing", 404);
+		}
+		if (!$password)
+		{
+			throw new Exception("Password missing", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set md5 = :md5 where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':md5', md5($password));
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_password: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	
+	}
+
+	function user_exists($username) 
+	{
+		try
+		{
+			$select_stmt = 'select count(*) from users where username = :username';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("user_exists: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$result = $sth->fetchColumn();
+		return $result;
 	}
 
 	function authenticate_user($username, $password) #auth user may be different from user, so need the username here
@@ -188,6 +262,11 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	
 	function delete_user($username) 
 	{
+		if (!$username)
+		{
+			throw new Exception("Username missing", 404);
+		}
+
 		try
 		{
 			$delete_stmt = 'delete from wbo where username = :username';
@@ -276,6 +355,15 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	#Don't forget to tell the storage object to initialize the user db (preferably first)!
 	function create_user($username, $password)
 	{ 
+		if (!$username)
+		{
+			throw new Exception("Username missing", 404);
+		}
+		if (!$password)
+		{
+			throw new Exception("Password missing", 404);
+		}
+
 		try
 		{
 			$insert_stmt = 'insert into users (username, md5) values (:username, :md5)';
@@ -287,11 +375,43 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		catch( PDOException $exception )
 		{
 			error_log("create_user: " . $exception->getMessage());
+			#need to add a subcatch here for user already existing
 			throw new Exception("Database unavailable", 503);
 		}
 		
 		
 		return 1;
+	}
+
+	function update_password($username, $password)
+	{
+		if (!$username)
+		{
+			throw new Exception("Username missing", 404);
+		}
+		if (!$password)
+		{
+			throw new Exception("Password missing", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set md5 = :md5 where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':md5', md5($password));
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}			
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_password: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	
 	}
 
 	function authenticate_user($username, $password) 
@@ -314,8 +434,32 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		return $result;
 	}
 	
+	function user_exists($username) 
+	{
+		try
+		{
+			$select_stmt = 'select count(*) from users where username = :username';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("user_exists: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$result = $sth->fetchColumn();
+		return $result ? 1 : 0;
+	}
+	
 	function delete_user($username)
 	{
+		if (!$username)
+		{
+			throw new Exception("Username missing", 404);
+		}
+
 		try
 		{
 			$delete_stmt = 'delete from users where username = :username';
@@ -349,6 +493,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		
 	}
 }
+
 
 
  ?>

@@ -47,13 +47,47 @@ my $PROTOCOL = 'http';
 my $SERVER = 'localhost';
 my $USERNAME = 'test_user';
 my $PASSWORD = 'test123';
+my $ADMIN_SECRET = 'bad secret';
+my $PREFIX = 'weave/0.3';
+my $ADMIN_PREFIX = 'weave/admin';
+
+my $DO_ADMIN_TESTS = 1;
 
 my $ua = LWP::UserAgent->new;
 $ua->agent("Weave Server Test/0.3");
+my $req;
 
+if ($DO_ADMIN_TESTS)
+{
+	#create the user
+	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
+	$req->content_type('application/x-www-form-urlencoded');
+	print "create user: " . $ua->request($req)->content() . "\n";
+	
+	#create the user again
+	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
+	$req->content_type('application/x-www-form-urlencoded');
+	print "create user again (should fail): " . $ua->request($req)->content() . "\n";
+
+	#check user existence
+	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'check', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];
+	$req->content_type('application/x-www-form-urlencoded');
+	print "check user existence: " . $ua->request($req)->content() . "\n";
+	
+	#change the password
+	$PASSWORD .= '2';
+	my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
+	$req->content_type('application/x-www-form-urlencoded');
+	print "change password: " . $ua->request($req)->content() . "\n";
+	
+	#change password (bad secret)
+	my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => 'wrong secret'];
+	$req->content_type('application/x-www-form-urlencoded');
+	print "change password(bad secret): " . $ua->request($req)->content() . "\n";
+}	
 
 #clear the user
-my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test");
+$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "delete: " . $ua->request($req)->content() . "\n";
 my $id = 0;
@@ -65,7 +99,7 @@ foreach (1..10)
 
 	$id++;
 	my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-	my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 	$req->authorization_basic($USERNAME, $PASSWORD);
 	$req->content($json);
 	$req->content_type('application/x-www-form-urlencoded');
@@ -85,15 +119,15 @@ foreach (1..10)
 $batch =~ s/^,/[/;
 $batch .= "]";
 
-$req = POST "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test", ['wbo' => $batch];
+$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test", ['wbo' => $batch];
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content_type('application/x-www-form-urlencoded');
 
-print "batch upload: " . $ua->request($req)->status_line() . "\n";
+print "batch upload: " . $ua->request($req)->content() . "\n";
 
 #do a replace
 my $json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
@@ -103,7 +137,7 @@ print "replace: " . $ua->request($req)->content() . "\n";
 #do a bad put (no id)
 
 my $json = '{"id": "","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
@@ -113,7 +147,7 @@ print "bad PUT (no id): " . $ua->request($req)->content() . "\n";
 #do a bad put (bad json)
 
 $json = '{"id": ","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
@@ -124,7 +158,7 @@ print "bad PUT (bad json): " . $ua->request($req)->content() . "\n";
 #do a bad put (no auth)
 
 $json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
 
@@ -133,7 +167,7 @@ print "bad PUT (no auth): " . $ua->request($req)->content() . "\n";
 #do a bad put (wrong pw)
 
 $json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/$id";
+my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, 'badpassword');
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
@@ -143,7 +177,7 @@ print "bad PUT (wrong pw): " . $ua->request($req)->content() . "\n";
 
 #bad post (bad json);
 $batch =~ s/\]$//;
-$req = POST "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test", ['wbo' => $batch];
+$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test", ['wbo' => $batch];
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content_type('application/x-www-form-urlencoded');
 print "bad batch upload (bad json): " . $ua->request($req)->content() . "\n";
@@ -153,43 +187,51 @@ print "bad batch upload (bad json): " . $ua->request($req)->content() . "\n";
 
 $batch .= "]";
 $batch =~ s/parentid":"2/parentid":"3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333/g;
-$req = POST "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test", ['wbo' => $batch];
+$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test", ['wbo' => $batch];
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content_type('application/x-www-form-urlencoded');
 print "mixed batch upload (bad parentids on some): " . $ua->request($req)->content() . "\n";
 
 
 # should return ["1", "2" .. "20"]
-$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/";
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "should return [\"1\", \"2\" .. \"20\"] (in some order): " . $ua->request($req)->content() . "\n";
 
 # should return the user id record for #4
-$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/4";
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/4";
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "should return record 4: " . $ua->request($req)->content() . "\n";
 
 # should return about half the ids
-$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?modified=2454755";
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?modified=2454755";
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "modified after halftime: " . $ua->request($req)->content() . "\n";
 
 # should return about one-third the ids
-$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?parentid=1";
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1";
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "parent ids (mod 3 = 1): " . $ua->request($req)->content() . "\n";
 
 # mix our params
-$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?parentid=1&modified=2454755";
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454755";
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "parentid and modified: " . $ua->request($req)->content() . "\n";
 
 #as above, but full records
-$req = GET "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test/?parentid=1&modified=2454755&full=1";
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454755&full=1";
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "parentid and modified (full records): " . $ua->request($req)->content() . "\n";
 
-#and clear the user again
-my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/weave/0.3/$USERNAME/test");
+#clear the user again
+my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
 $req->authorization_basic($USERNAME, $PASSWORD);
-print "delete: " . $ua->request($req)->content() . "\n";
+print "clear: " . $ua->request($req)->content() . "\n";
+
+if ($DO_ADMIN_TESTS)
+{
+	#delete the user
+	my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'delete', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];
+	$req->content_type('application/x-www-form-urlencoded');
+	print "delete user: " . $ua->request($req)->content() . "\n";
+}
