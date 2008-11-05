@@ -123,7 +123,7 @@
 				print json_encode($authdb->user_exists($username) ? 1: 0);
 				exit;
 			case 'create':
-				if (!preg_match('/^[A-Z0-9._-]+/i', $username))) 
+				if (!preg_match('/^[A-Z0-9._-]+/i', $username)) 
 				{
 					report_problem("Invalid characters in username", 400);
 				}
@@ -138,7 +138,7 @@
 				$authdb->update_password($username, $password);
 				break;
 			case 'delete':
-				if (!preg_match('/^[A-Z0-9._-]+/i', $username))) 
+				if (!preg_match('/^[A-Z0-9._-]+/i', $username))
 				{
 					report_problem("Invalid characters in username", 400);
 				}
