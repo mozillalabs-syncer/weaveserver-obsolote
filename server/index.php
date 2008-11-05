@@ -126,10 +126,6 @@
 	{
 		report_problem('no user provided', 400);
 	}
-	if (!$collection)
-	{
-		report_problem('no collection provided', 400);
-	}
 	
 	#Auth the user
 	$authdb = get_auth_object();
@@ -143,6 +139,12 @@
 	catch(Exception $e)
 	{
 		report_problem($e->getMessage(), $e->getCode());
+	}
+
+	if (!$collection)
+	{
+		echo json_encode("1");
+		exit;
 	}
 	
 
