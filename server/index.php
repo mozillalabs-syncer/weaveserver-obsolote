@@ -51,6 +51,12 @@
 					'404' => '404 Not Found',
 					'503' => '503 Service Unavailable');
 		header('HTTP/1.1 ' . $headers{$code},true,$code);
+		
+		if ($code == 401)
+		{
+			header('WWW-Authenticate: Basic realm="Weave"');
+		}
+		
 		echo json_encode($message);
 		exit;
 	}
@@ -108,13 +114,13 @@
 	
 	header("Content-type: application/json");
 	
-	$path = $_SERVER['PATH_INFO'];
+	$path = array_key_exists('PATH_INFO', $_SERVER) ? $_SERVER['PATH_INFO'] : '/';
 	$path = substr($path, 1); #chop the lead slash
 	list($username, $collection, $id) = explode('/', $path.'//');
 	
 	$auth_user = array_key_exists('PHP_AUTH_USER', $_SERVER) ? $_SERVER['PHP_AUTH_USER'] : null;
 	$auth_pw = array_key_exists('PHP_AUTH_PW', $_SERVER) ? $_SERVER['PHP_AUTH_PW'] : null;
-	
+
 	#Basic path validation. No point in going on if these are missing
 	if (!$username)
 	{
