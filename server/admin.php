@@ -111,6 +111,7 @@
 	$username = array_key_exists('user', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['user']) : $_POST['user']) : null;
 	$password = array_key_exists('pass', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['pass']) : $_POST['pass']) : null;
 
+
 	try
 	{
 		$authdb = get_auth_object();
@@ -122,6 +123,10 @@
 				print json_encode($authdb->user_exists($username) ? 1: 0);
 				exit;
 			case 'create':
+				if (!preg_match('/^[A-Z0-9._-]+/i', $username))) 
+				{
+					report_problem("Invalid characters in username", 400);
+				}
 				if ($authdb->user_exists($username))
 				{
 					report_problem("User already exists", 400);
@@ -133,6 +138,10 @@
 				$authdb->update_password($username, $password);
 				break;
 			case 'delete':
+				if (!preg_match('/^[A-Z0-9._-]+/i', $username))) 
+				{
+					report_problem("Invalid characters in username", 400);
+				}
 				$storagedb->delete_user($username);
 				$authdb->delete_user($username);
 				break;
