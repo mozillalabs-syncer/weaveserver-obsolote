@@ -100,14 +100,11 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$this->open_connection();
 		}
-		elseif ($dbh == 'no_connect')
-		{
-			# do nothing. No connection.
-		}
-		else
+		elseif (is_object($dbh))
 		{
 			$this->_dbh = $dbh;
 		}
+		#otherwise we do nothing with the connection
 	}
 
 	function open_connection() 
@@ -298,7 +295,7 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$delete_stmt = 'delete from wbo where username = :username';
 			$sth = $this->_dbh->prepare($delete_stmt);
-			$sth->bindParam(':username', $username);
+			$sth->bindParam(':username', $this->_username);
 			$sth->execute();
 
 		}
@@ -321,21 +318,18 @@ class WeaveStorageSqlite implements WeaveStorage
 	var $_username;
 	var $_dbh;	
 	
-	function __construct($username, $dbh = null)
+	function __construct($username, $dbh = null) 
 	{
 		$this->_username = $username;
 		if (!$dbh)
 		{
 			$this->open_connection();
 		}
-		elseif ($dbh == 'no_connect')
-		{
-			# do nothing. No connection.
-		}
-		else
+		elseif (is_object($dbh))
 		{
 			$this->_dbh = $dbh;
 		}
+		#otherwise we do nothing with the connection
 	}
 	
 	function open_connection()

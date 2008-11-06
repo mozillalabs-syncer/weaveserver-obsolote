@@ -142,7 +142,8 @@
 				{
 					report_problem("Invalid characters in username", 400);
 				}
-				$storagedb->delete_user($username);
+				$storagedb->open_connection(); #need a connection for mysql
+				$storagedb->delete_user();
 				$authdb->delete_user($username);
 				break;
 			default:
