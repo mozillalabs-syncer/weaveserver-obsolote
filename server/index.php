@@ -61,56 +61,6 @@
 		exit;
 	}
 	
-	function get_auth_object()
-	{
-		try 
-		{
-			switch(getenv('WEAVE_AUTH_ENGINE'))
-			{
-				case 'mysql':
-					return new WeaveAuthenticationMysql();
-				case 'sqlite':
-					return new WeaveAuthenticationSqlite();
-				case 'htaccess':
-				case 'none':
-				case '':
-					return new WeaveAuthenticationNone();
-				default:
-					report_problem("Unknown authentication type", 503);
-			}				
-		}
-		catch(Exception $e)
-		{
-			report_problem($e->getMessage(), $e->getCode());
-		}
-	}
-	
-	function get_storage_object($username, &$auth_obj = null)
-	{
-		try 
-		{
-			switch(getenv('WEAVE_STORAGE_ENGINE'))
-			{
-				case 'mysql':
-					if (getenv('WEAVE_SHARE_DBH') && $auth_obj)
-					{
-						return new WeaveStorageMysql($username, $auth_obj->get_connection());
-					}
-					else
-					{
-						return new WeaveStorageMysql($username);
-					}
-				case 'sqlite':
-					return new WeaveStorageSqlite($username);
-				default:
-					report_problem("Unknown storage type", 503);
-			}				
-		}
-		catch(Exception $e)
-		{
-			report_problem($e->getMessage(), $e->getCode());
-		}
-	}
 	
 	header("Content-type: application/json");
 	
@@ -124,13 +74,13 @@
 	#Basic path validation. No point in going on if these are missing
 	if (!$username)
 	{
-		report_problem('no user provided', 400);
+		report_problem('3', 400);
 	}
 	
 	#Auth the user
-	$authdb = get_auth_object();
 	try 
 	{
+		$authdb = get_auth_object();
 		if (!$authdb->authenticate_user($auth_user, $auth_pw))
 		{
 			report_problem('Authentication failed', '401');
@@ -149,7 +99,7 @@
 	
 
 	#user passes, onto actually getting the data
-	$db = get_storage_object($username, $authdb);	
+	$db = get_storage_object($username, null, getenv('WEAVE_SHARE_DBH') ? $authdb->get_connection() : null);	
 	
 
 	if ($_SERVER['REQUEST_METHOD'] == 'GET')
@@ -157,7 +107,7 @@
 
 		if (getenv('WEAVE_USER_MATCH_READ') && $auth_user != $username)
 		{
-			report_problem("userid must match account", 401);
+			report_problem("5", 401);
 		}
 		
 		
@@ -214,7 +164,7 @@
 
 		if (getenv('WEAVE_USER_MATCH_WRITE') && $auth_user != $username)
 		{
-			report_problem("userid must match account", 401);
+			report_problem("5", 401);
 		}
 
 		$putdata = fopen("php://input", "r");
@@ -224,7 +174,7 @@
 		$wbo = new wbo();
 		if (!$wbo->extract_json($json))
 		{
-			report_problem("unable to parse json in extraction", 400);
+			report_problem("6", 400);
 		}
 		
 		$wbo->collection($collection);
@@ -233,7 +183,6 @@
 
 		if ($wbo->validate())
 		{
-			$db = get_storage_object($username);		
 			try
 			{
 				$db->store_object($wbo);
@@ -254,17 +203,15 @@
 	
 		if (getenv('WEAVE_USER_MATCH_WRITE') && $auth_user != $username)
 		{
-			report_problem("userid must match account", 401);
+			report_problem("5", 401);
 		}
 
 		#stupid php being helpful with input data...
 		$json = json_decode(ini_get('magic_quotes_gpc') ? stripslashes($_POST['wbo']) : $_POST['wbo'], true);
 		if (!$json)
 		{
-			report_problem("unable to parse json", 400);
+			report_problem("6", 400);
 		}
-
-		$db = get_storage_object($username);		
 		
 		$success_ids = array();
 		$failed_ids = array();
@@ -274,7 +221,7 @@
 			$wbo = new wbo();
 			if (!$wbo->extract_json($wbo_data))
 			{
-				report_problem("unable to parse json in extraction", 400);
+				report_problem("6", 400);
 			}
 			
 			$wbo->collection($collection);
@@ -305,10 +252,8 @@
 
 		if (getenv('WEAVE_USER_MATCH_WRITE') && $auth_user != $username)
 		{
-			report_problem("userid must match account", 401);
+			report_problem("5", 401);
 		}
-
-		$db = get_storage_object($username);		
 
 		if ($id)
 		{
@@ -338,7 +283,7 @@
 	else
 	{
 		#bad protocol. There are protocols left? HEAD, I guess.
-		report_problem("bad protocol", 400);
+		report_problem("1", 400);
 	}
 		
 ?>

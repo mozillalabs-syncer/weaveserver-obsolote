@@ -40,6 +40,38 @@
 require_once 'weave_basic_object.inc';
 
 
+#Returns the storage object. Takes three arguments
+#username: username to be operated on
+#type: explicit type of storage. Usually set by the WEAVE_STORAGE_ENGINE environment variable
+#dbh: an already existing database handle to use. If a non-object, will not create
+#a db connection (must be done explicitly)
+
+function get_storage_object($username, $type = null, $dbh = null)
+{
+	if (!$type)
+	{
+		$type = getenv('WEAVE_STORAGE_ENGINE');
+	}
+	
+	switch($type)
+	{
+		case 'mysql':
+			if (is_object($auth_obj))
+			{
+				return new WeaveStorageMysql($username, $dbh);
+			}
+			else
+			{
+				return new WeaveStorageMysql($username, $dbh);
+			}
+		case 'sqlite':
+			return new WeaveStorageSqlite($username, $dbh);
+		default:
+			throw new Exception("Unknown storage type", 503);
+	}				
+}
+
+
 #PDO wrapper to an underlying SQLite storage engine.
 #Note that username is only needed for opening the file. All operations after that will be on that user.
 

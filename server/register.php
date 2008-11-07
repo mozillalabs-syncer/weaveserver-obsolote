@@ -45,27 +45,20 @@
 		$headers = array('400' => '400 Bad Request',
 					'401' => '401 Unauthorized',
 					'404' => '404 Not Found',
-					'405' => '405 Method Not Allowed',
 					'503' => '503 Service Unavailable');
 		header('HTTP/1.1 ' . $headers{$code},true,$code);
 		echo json_encode($message);
 		exit;
 	}
 	
-
-	if (! $_SERVER['REQUEST_METHOD'] == 'POST')
-	{
-		report_problem("Illegal Method", 405);
-	}
-
-	if (getenv('WEAVE_USER_ADMIN_SECRET') != (ini_get('magic_quotes_gpc') ? stripslashes($_POST['secret']) : $_POST['secret']))
-	{
-		report_problem("Secret missing or incorrect", 400);
-	}
+	
+	$path = array_key_exists('PATH_INFO', $_SERVER) ? $_SERVER['PATH_INFO'] : '/';
+	$path = substr($path, 1); #chop the lead slash
+	list($action, $info) = explode('/', $path.'/');
 	
 
-	$username = array_key_exists('user', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['user']) : $_POST['user']) : null;
-	$password = array_key_exists('pass', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['pass']) : $_POST['pass']) : null;
+ 	$username = array_key_exists('uid', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['uid']) : $_POST['uid']) : null;
+	$password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
 
 
 	try
@@ -73,37 +66,58 @@
 		$authdb = get_auth_object();
 		$storagedb = get_storage_object($username, null, 1);
 		
-		switch($_POST['function'])
+		switch($action)
 		{
-			case 'check':
-				print json_encode($authdb->user_exists($username) ? 1: 0);
+			case 'location':
+				print json_encode($authdb->get_user_location($info) ? 1: 0);
 				exit;
-			case 'create':
-				if (!preg_match('/^[A-Z0-9._-]+/i', $username)) 
+			case 'check':
+				print json_encode($authdb->user_exists($info) ? 1: 0);
+				exit;
+			case 'chpwd':
+				$new_password = array_key_exists('new', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['new']) : $_POST['new']) : null;
+				if (!$authdb->authenticate_user($username, $password))
 				{
-					report_problem("Invalid characters in username", 400);
+					report_problem('Authentication failed', '401');
 				}
-				if ($authdb->user_exists($username))
-				{
-					report_problem("User already exists", 400);
-				}
-				$storagedb->create_user($username, $password);
-				$authdb->create_user($username, $password);
+				$authdb->update_password($username, $new);
 				break;
-			case 'update':
-				$authdb->update_password($username, $password);
-				break;
-			case 'delete':
-				if (!preg_match('/^[A-Z0-9._-]+/i', $username))
+			case 'new':
+				if ($_SERVER['REQUEST_METHOD'] == 'GET')
 				{
-					report_problem("Invalid characters in username", 400);
+					if (getenv('WEAVE_REGISTER_USE_CAPTCHA'))
+					{
+						require_once 'captcha.inc';
+						print captcha_html();
+					}
 				}
-				$storagedb->open_connection(); #need a connection for mysql
-				$storagedb->delete_user();
-				$authdb->delete_user($username);
+				else
+				{
+					if (getenv('WEAVE_REGISTER_USE_CAPTCHA'))
+					{
+						require_once 'captcha.inc';
+ 						$challenge = array_key_exists('recaptcha_challenge_field', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['recaptcha_challenge_field']) : $_POST['recaptcha_challenge_field']) : null;
+						$response = array_key_exists('recaptcha_response_field', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['recaptcha_response_field']) : $_POST['recaptcha_response_field']) : null;
+						if (!captcha_verify)
+						{
+							report_problem("2", 400);
+						}
+					}
+					if (!preg_match('/^[A-Z0-9._-]+/i', $username)) 
+					{
+						report_problem("3", 400);
+					}
+					if ($authdb->user_exists($username))
+					{
+						report_problem("4", 400);
+					}
+					$email = array_key_exists('mail', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['mail']) : $_POST['mail']) : null;
+					$storagedb->create_user($username, $password);
+					$authdb->create_user($username, $password, $email);
+				}
 				break;
 			default:
-				report_problem("Unknown function", 400);
+				report_problem("1", 400);
 		}
 	}
 	catch(Exception $e)

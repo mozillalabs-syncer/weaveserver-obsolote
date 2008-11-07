@@ -37,6 +37,27 @@
 #
 # ***** END LICENSE BLOCK *****
 	
+function get_auth_object($type = null)
+{
+	if (!$type)
+	{
+		$type = getenv('WEAVE_AUTH_ENGINE');
+	}
+	
+	switch($type)
+	{
+		case 'mysql':
+			return new WeaveAuthenticationMysql();
+		case 'sqlite':
+			return new WeaveAuthenticationSqlite();
+		case 'htaccess':
+		case 'none':
+		case '':
+			return new WeaveAuthenticationNone();
+		default:
+			throw new Exception("Unknown authentication type", 503);
+	}				
+}
 
 
 interface WeaveAuthentication
@@ -47,13 +68,17 @@ interface WeaveAuthentication
 
 	function get_connection();
 	
-	function create_user($username, $password);
+	function create_user($username, $password, $email = "");
 	
 	function update_password($username, $password);
+
+	function update_email($username, $email = "");
 
 	function user_exists($username);
 
 	function authenticate_user($username, $password);
+
+	function get_user_location($username);
 	
 	function delete_user($username);
 }
@@ -76,12 +101,22 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 		return null;
 	}
 	
-	function create_user($username, $password)
+	function create_user($username, $password, $email = "")
 	{
 		return 1;
 	}
 	
+	function get_user_location($username)
+	{
+		return 0;
+	}
+
 	function update_password($username, $password)
+	{
+		return 1;
+	}
+
+	function update_email($username, $email = "")
 	{
 		return 1;
 	}
@@ -114,6 +149,7 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 #(
 # username varchar(32),
 # md5_pass varchar(32),
+# email varchar(64),
 #) engine=InnoDB;
 #
 
@@ -162,23 +198,24 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		return $this->_dbh;
 	}
 
-	function create_user($username, $password)
+	function create_user($username, $password, $email = "")
 	{ 
 		if (!$username)
 		{
-			throw new Exception("Username missing", 404);
+			throw new Exception("3", 404);
 		}
 		if (!$password)
 		{
-			throw new Exception("Password missing", 404);
+			throw new Exception("7", 404);
 		}
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5) values (:username, :md5)';
+			$insert_stmt = 'insert into users (username, md5, email) values (:username, :md5, :email)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
+			$sth->bindParam(':email', $email);
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -194,11 +231,11 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	{
 		if (!$username)
 		{
-			throw new Exception("Username missing", 404);
+			throw new Exception("3", 404);
 		}
 		if (!$password)
 		{
-			throw new Exception("Password missing", 404);
+			throw new Exception("7", 404);
 		}
 
 		try
@@ -209,12 +246,39 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 			$sth->bindParam(':md5', md5($password));
 			if ($sth->execute() == 0)
 			{
-				throw new Exception("User not found", 404);
+				throw new Exception("3", 404);
 			}
 		}
 		catch( PDOException $exception )
 		{
 			error_log("update_password: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	
+	}
+
+	function update_email($username, $email = "")
+	{
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set email = :email where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':email', $email);
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_email: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
 		return 1;
@@ -260,11 +324,16 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		return $result ? 1 : 0;
 	}
 	
+	function get_user_location($username)
+	{
+		return 0;
+	}
+
 	function delete_user($username) 
 	{
 		if (!$username)
 		{
-			throw new Exception("Username missing", 404);
+			throw new Exception("3", 404);
 		}
 
 		try
@@ -292,7 +361,7 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	{
 		try
 		{
-			$create_statement = "create table users (username varchar(32) primary key, md5 varchar(32)) engine=InnoDB";
+			$create_statement = "create table users (username varchar(32) primary key, md5 varchar(32), email varchar(64)) engine=InnoDB";
 		
 			$sth = $this->_dbh->prepare($create_statement);
 			$sth->execute();
@@ -353,23 +422,24 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 
 
 	#Don't forget to tell the storage object to initialize the user db (preferably first)!
-	function create_user($username, $password)
+	function create_user($username, $password, $email = "")
 	{ 
 		if (!$username)
 		{
-			throw new Exception("Username missing", 404);
+			throw new Exception("3", 404);
 		}
 		if (!$password)
 		{
-			throw new Exception("Password missing", 404);
+			throw new Exception("7", 404);
 		}
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5) values (:username, :md5)';
+			$insert_stmt = 'insert into users (username, md5, email) values (:username, :md5, :email)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
+			$sth->bindParam(':email', $email);
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -387,11 +457,11 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	{
 		if (!$username)
 		{
-			throw new Exception("Username missing", 404);
+			throw new Exception("3", 404);
 		}
 		if (!$password)
 		{
-			throw new Exception("Password missing", 404);
+			throw new Exception("7", 404);
 		}
 
 		try
@@ -408,6 +478,33 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		catch( PDOException $exception )
 		{
 			error_log("update_password: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	
+	}
+
+	function update_email($username, $email = "")
+	{
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set email = :email where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':email', $email);
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_email: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
 		return 1;
@@ -434,6 +531,11 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		return $result;
 	}
 	
+	function get_user_location($username)
+	{
+		return 0;
+	}
+
 	function user_exists($username) 
 	{
 		try
@@ -457,7 +559,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	{
 		if (!$username)
 		{
-			throw new Exception("Username missing", 404);
+			throw new Exception("3", 404);
 		}
 
 		try
@@ -480,7 +582,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	{
 		try
 		{
-			$create_statement = "create table users (username text primary key, md5 text)";
+			$create_statement = "create table users (username text primary key, md5 text, email text)";
 		
 			$sth = $this->_dbh->prepare($create_statement);
 			$sth->execute();
