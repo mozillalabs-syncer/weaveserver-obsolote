@@ -177,6 +177,9 @@
 			report_problem("6", 400);
 		}
 		
+		#use the url if the json object doesn't have an id
+		if (!$wbo->id() && $id) { $wbo->id($id) }
+		
 		$wbo->collection($collection);
 		if (!$wbo->modified()) { $wbo->modified(time() / 86400 + 2440587.5); } #current julian time
 		if (!$wbo->encoding()) { $wbo->encoding('utf-8'); }
@@ -195,7 +198,7 @@
 		}
 		else
 		{
-			echo json_encode($wbo->get_error());
+			report_problem("8", 400);
 		}
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'POST')

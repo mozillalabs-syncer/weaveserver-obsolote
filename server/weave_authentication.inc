@@ -150,6 +150,7 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 # username varchar(32),
 # md5_pass varchar(32),
 # email varchar(64),
+# location varchar(128),
 #) engine=InnoDB;
 #
 
@@ -326,7 +327,21 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	
 	function get_user_location($username)
 	{
-		return 0;
+		try
+		{
+			$select_stmt = 'select location from users where username = :username';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_user_location: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$result = $sth->fetchColumn();
+		return $result;
 	}
 
 	function delete_user($username) 
@@ -533,7 +548,21 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	
 	function get_user_location($username)
 	{
-		return 0;
+		try
+		{
+			$select_stmt = 'select location from users where username = :username';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_user_location: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+
+		$result = $sth->fetchColumn();
+		return $result;
 	}
 
 	function user_exists($username) 
