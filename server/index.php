@@ -178,7 +178,7 @@
 		}
 		
 		#use the url if the json object doesn't have an id
-		if (!$wbo->id() && $id) { $wbo->id($id) }
+		if (!$wbo->id() && $id) { $wbo->id($id); }
 		
 		$wbo->collection($collection);
 		if (!$wbo->modified()) { $wbo->modified(time() / 86400 + 2440587.5); } #current julian time
