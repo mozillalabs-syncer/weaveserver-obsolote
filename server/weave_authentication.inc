@@ -150,7 +150,7 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 # username varchar(32),
 # md5_pass varchar(32),
 # email varchar(64),
-# location varchar(128),
+# location text,
 #) engine=InnoDB;
 #
 

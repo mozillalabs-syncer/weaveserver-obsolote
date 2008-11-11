@@ -56,7 +56,7 @@ function get_storage_object($username, $type = null, $dbh = null)
 	switch($type)
 	{
 		case 'mysql':
-			if (is_object($auth_obj))
+			if (is_object($dbh))
 			{
 				return new WeaveStorageMysql($username, $dbh);
 			}

@@ -60,6 +60,11 @@ print "Password: ";
 my $password = <STDIN>;
 chomp $password;
 
+print "Secret: ";
+my $secret = <STDIN>;
+chomp $secret;
+$ADMIN_SECRET = $secret if $secret;
+
 #create the user
 $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $username, 'pass' => $password, 'secret' => $ADMIN_SECRET];
 $req->content_type('application/x-www-form-urlencoded');
