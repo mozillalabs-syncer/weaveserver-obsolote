@@ -59,7 +59,7 @@ class wbo
 		$this->encryption($extracted{'encryption'});
 		
 		$this->modified($extracted{'modified'});
-		$this->payload(json_encode($extracted{'payload'}));
+		$this->payload($extracted{'payload'});
 		$this->encoding($extracted{'encoding'});
 		return 1;
 	}
@@ -111,12 +111,12 @@ class wbo
 		return array_key_exists('encoding', $this->wbo_hash) ?  $this->wbo_hash{'encoding'} : "";
 	}
 
-	function payload($payload = null)
+	function payload(&$payload = null)
 	{
 		if ($payload){ $this->wbo_hash{'payload'} = $payload; }
-		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash{'payload'} : "";
+		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash{'payload'} : null;
 	}
-
+	
 	function validate()
 	{
 		
