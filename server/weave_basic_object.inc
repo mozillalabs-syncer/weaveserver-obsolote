@@ -111,7 +111,7 @@ class wbo
 		return array_key_exists('encoding', $this->wbo_hash) ?  $this->wbo_hash{'encoding'} : "";
 	}
 
-	function payload(&$payload = null)
+	function &payload(&$payload = null)
 	{
 		if ($payload){ $this->wbo_hash{'payload'} = $payload; }
 		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash{'payload'} : null;
@@ -121,24 +121,27 @@ class wbo
 	{
 		
 		if (!$this->id() || strlen($this->id()) > 64)
-		{ $this->_error[] = "invalid id"; return 0; }
+		{ $this->_error[] = "invalid id"; }
 
 		if ($this->parentid() && strlen($this->parentid()) > 64)
-		{ $this->_error[] = "invalid parentid"; return 0; }
+		{ $this->_error[] = "invalid parentid"; }
 
 		if (!is_numeric($this->modified()))
-		{ $this->_error[] = "invalid modified date"; return 0; }
+		{ $this->_error[] = "invalid modified date"; }
 		
 		if ($this->encryption() && strlen($this->encryption()) > 256)
-		{ $this->_error[] = "invalid encryption"; return 0; }
+		{ $this->_error[] = "invalid encryption"; }
 
 		if ($this->encoding() && strlen($this->encoding()) > 16)
-		{ $this->_error[] = "invalid encryption"; return 0; }
+		{ $this->_error[] = "invalid encryption"; }
 
 		if (!$this->_collection || strlen($this->_collection) > 64)
-		{ $this->_error[] = "invalid collection"; return 0; }
+		{ $this->_error[] = "invalid collection"; }
 		
-		return 1;
+		if (getenv('WEAVE_PAYLOAD_MAX_SIZE') && strlen($this->payload()) > getenv('WEAVE_PAYLOAD_MAX_SIZE'))
+		{ $this->_error[] = "payload too large"; }
+		
+		return !$this->get_error();
 	}
 
 	function get_error()
