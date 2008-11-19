@@ -181,7 +181,7 @@
 		if (!$wbo->id() && $id) { $wbo->id($id); }
 		
 		$wbo->collection($collection);
-		if (!$wbo->modified()) { $wbo->modified(time() / 86400 + 2440587.5); } #current julian time
+		$wbo->modified(time() / 86400 + 2440587.5); #current julian time
 		if (!$wbo->encoding()) { $wbo->encoding('utf-8'); }
 
 		if ($wbo->validate())
@@ -194,7 +194,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode("success");
+			echo json_encode($wbo->modified());
 		}
 		else
 		{
@@ -210,7 +210,11 @@
 		}
 
 		#stupid php being helpful with input data...
-		$json = json_decode(ini_get('magic_quotes_gpc') ? stripslashes($_POST['wbo']) : $_POST['wbo'], true);
+		$putdata = fopen("php://input", "r");
+		$jsonstring = '';
+		while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
+		$json = json_decode($jsonstring, true);
+
 		if (!$json)
 		{
 			report_problem("6", 400);
@@ -228,7 +232,7 @@
 			}
 			
 			$wbo->collection($collection);
-			if (!$wbo->modified()) { $wbo->modified(time() / 86400 + 2440587.5); }
+			$wbo->modified(time() / 86400 + 2440587.5);
 			if (!$wbo->encoding()) { $wbo->encoding('utf-8'); }
 
 			if ($wbo->validate())
@@ -241,7 +245,7 @@
 				{
 					report_problem($e->getMessage(), $e->getCode());
 				}
-				$success_ids[] = $wbo->id();
+				$success_ids[$wbo->id()] = $wbo->modified();
 			}
 			else
 			{

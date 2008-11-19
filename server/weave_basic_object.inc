@@ -47,7 +47,7 @@ class wbo
 	{
 		
 		$extracted = is_string($json) ? json_decode($json, true) : $json;
-		
+
 		#need to check the json was valid here...
 		if (!$extracted)
 		{
@@ -58,7 +58,6 @@ class wbo
 		$this->parentid($extracted{'parentid'});
 		$this->encryption($extracted{'encryption'});
 		
-		$this->modified($extracted{'modified'});
 		$this->payload($extracted{'payload'});
 		$this->encoding($extracted{'encoding'});
 		return 1;
@@ -111,7 +110,7 @@ class wbo
 		return array_key_exists('encoding', $this->wbo_hash) ?  $this->wbo_hash{'encoding'} : "";
 	}
 
-	function &payload(&$payload = null)
+	function payload(&$payload = null)
 	{
 		if ($payload){ $this->wbo_hash{'payload'} = $payload; }
 		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash{'payload'} : null;
@@ -135,8 +134,12 @@ class wbo
 		if ($this->encoding() && strlen($this->encoding()) > 16)
 		{ $this->_error[] = "invalid encryption"; }
 
+		if (!$this->modified())
+		{ $this->_error[] = "no modification date"; }
+
 		if (!$this->_collection || strlen($this->_collection) > 64)
 		{ $this->_error[] = "invalid collection"; }
+		
 		
 		if (getenv('WEAVE_PAYLOAD_MAX_SIZE') && strlen($this->payload()) > getenv('WEAVE_PAYLOAD_MAX_SIZE'))
 		{ $this->_error[] = "payload too large"; }

@@ -119,7 +119,8 @@ foreach (1..10)
 $batch =~ s/^,/[/;
 $batch .= "]";
 
-$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test", ['wbo' => $batch];
+$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
+$req->content($batch);
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content_type('application/x-www-form-urlencoded');
 
@@ -177,7 +178,8 @@ print "bad PUT (wrong pw): " . $ua->request($req)->content() . "\n";
 
 #bad post (bad json);
 $batch =~ s/\]$//;
-$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test", ['wbo' => $batch];
+$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
+$req->content($batch);
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content_type('application/x-www-form-urlencoded');
 print "bad batch upload (bad json): " . $ua->request($req)->content() . "\n";
@@ -187,7 +189,8 @@ print "bad batch upload (bad json): " . $ua->request($req)->content() . "\n";
 
 $batch .= "]";
 $batch =~ s/parentid":"2/parentid":"3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333/g;
-$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test", ['wbo' => $batch];
+$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
+$req->content($batch);
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content_type('application/x-www-form-urlencoded');
 print "mixed batch upload (bad parentids on some): " . $ua->request($req)->content() . "\n";

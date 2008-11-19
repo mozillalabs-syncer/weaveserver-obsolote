@@ -248,6 +248,9 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		$wbo = new wbo();
 		$payload = null;
+		
+		#payload can either be a json object, or a string. If it happens to be a string that
+		#starts like a json object, odds that it parses are infinitesmal, and we can fall through.
 		if ($result{'payload'}{0} == '[' || $result{'payload'}{0} == '{')
 		{
 			$payload = json_decode($result{'payload'});
@@ -284,7 +287,7 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		if ($modified)
 		{
-			$select_stmt .= " and modified >= ?";
+			$select_stmt .= " and modified > ?";
 			$params[] = $modified;
 		}
 	
@@ -534,7 +537,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 		if ($modified)
 		{
-			$select_stmt .= " and modified >= ?";
+			$select_stmt .= " and modified > ?";
 			$params[] = $modified;
 		}
 	
