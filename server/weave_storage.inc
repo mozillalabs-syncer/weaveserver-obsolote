@@ -171,9 +171,9 @@ class WeaveStorageMysql implements WeaveStorage
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':encoding', $wbo->encoding());
 			$payload = $wbo->payload();
-			if (is_object($payload))
+			if (is_object($payload) || is_array($payload))
 			{
-				$sth->bindParam(':payload', json_encode($payload()));
+				$sth->bindParam(':payload', json_encode($payload));
 			}
 			else
 			{
@@ -428,7 +428,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':encoding', $wbo->encoding());
 			$payload = $wbo->payload();
-			if (is_object($payload))
+			if (is_object($payload) || is_array($payload))
 			{
 				$sth->bindParam(':payload', json_encode($payload()));
 			}
