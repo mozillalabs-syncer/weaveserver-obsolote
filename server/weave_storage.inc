@@ -430,7 +430,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			$payload = $wbo->payload();
 			if (is_object($payload) || is_array($payload))
 			{
-				$sth->bindParam(':payload', json_encode($payload()));
+				$sth->bindParam(':payload', json_encode($payload));
 			}
 			else
 			{
