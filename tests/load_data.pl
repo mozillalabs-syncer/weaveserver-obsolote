@@ -179,7 +179,6 @@ print "bad PUT (wrong pw): " . $ua->request($req)->content() . "\n";
 
 $json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":["a", "b"]}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
-warn $json;
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');

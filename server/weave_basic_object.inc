@@ -54,12 +54,12 @@ class wbo
 			return 0;
 		}
 		
-		$this->id($extracted{'id'});
-		$this->parentid($extracted{'parentid'});
-		$this->encryption($extracted{'encryption'});
+		$this->id($extracted['id']);
+		$this->parentid($extracted['parentid']);
+		$this->encryption($extracted['encryption']);
 		
-		$this->payload($extracted{'payload'});
-		$this->encoding($extracted{'encoding'});
+		$this->payload($extracted['payload']);
+		$this->encoding($extracted['encoding']);
 		return 1;
 	}
 	
@@ -76,8 +76,8 @@ class wbo
 
 	function id($id = null)
 	{
-		if ($id) { $this->wbo_hash{'id'} = $id; }
-		return array_key_exists('id', $this->wbo_hash) ?  $this->wbo_hash{'id'} : "";
+		if ($id) { $this->wbo_hash['id'] = $id; }
+		return array_key_exists('id', $this->wbo_hash) ?  $this->wbo_hash['id'] : "";
 	}
 	
 	function collection($collection = null)
@@ -88,32 +88,32 @@ class wbo
 	
 	function parentid($parentid = null)
 	{
-		if ($parentid){ $this->wbo_hash{'parentid'} = $parentid; }
-		return array_key_exists('parentid', $this->wbo_hash) ?  $this->wbo_hash{'parentid'} : "";
+		if ($parentid){ $this->wbo_hash['parentid'] = $parentid; }
+		return array_key_exists('parentid', $this->wbo_hash) ?  $this->wbo_hash['parentid'] : "";
 	}
 	
 	function encryption($encryption = null)
 	{
-		if ($encryption){ $this->wbo_hash{'encryption'} = $encryption; }
-		return array_key_exists('encryption', $this->wbo_hash) ? $this->wbo_hash{'encryption'} : "";
+		if ($encryption){ $this->wbo_hash['encryption'] = $encryption; }
+		return array_key_exists('encryption', $this->wbo_hash) ? $this->wbo_hash['encryption'] : "";
 	}
 
 	function modified($modified = null)
 	{
-		if ($modified){ $this->wbo_hash{'modified'} = $modified; }
-		return array_key_exists('modified', $this->wbo_hash) ?  $this->wbo_hash{'modified'} : "";
+		if ($modified){ $this->wbo_hash['modified'] = $modified; }
+		return array_key_exists('modified', $this->wbo_hash) ?  $this->wbo_hash['modified'] : "";
 	}
 	
 	function encoding($encoding = null)
 	{
-		if ($encoding){ $this->wbo_hash{'encoding'} = $encoding; }
-		return array_key_exists('encoding', $this->wbo_hash) ?  $this->wbo_hash{'encoding'} : "";
+		if ($encoding){ $this->wbo_hash['encoding'] = $encoding; }
+		return array_key_exists('encoding', $this->wbo_hash) ?  $this->wbo_hash['encoding'] : "";
 	}
 
 	function payload($payload = null)
 	{
-		if ($payload){ $this->wbo_hash{'payload'} = $payload; }
-		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash{'payload'} : null;
+		if ($payload){ $this->wbo_hash['payload'] = $payload; }
+		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash['payload'] : null;
 	}
 	
 	function validate()
@@ -141,10 +141,10 @@ class wbo
 		{ $this->_error[] = "invalid collection"; }
 		
 		
-		if (!is_string($this->wbo_hash{'payload'}))
+		if (!is_string($this->wbo_hash['payload']))
 		{ $this->_error[] = "payload needs to be json-encoded"; }
 		
-		if (getenv('WEAVE_PAYLOAD_MAX_SIZE') && strlen($this->wbo_hash{'payload'}) > getenv('WEAVE_PAYLOAD_MAX_SIZE'))
+		if (getenv('WEAVE_PAYLOAD_MAX_SIZE') && strlen($this->wbo_hash['payload']) > getenv('WEAVE_PAYLOAD_MAX_SIZE'))
 		{ $this->_error[] = "payload too large"; }
 		
 		return !$this->get_error();

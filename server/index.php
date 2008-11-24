@@ -194,7 +194,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode($wbo->modified());
+			echo json_encode((string)$wbo->modified());
 		}
 		else
 		{
@@ -223,6 +223,7 @@
 		$success_ids = array();
 		$failed_ids = array();
 		
+		$modified = time() / 86400 + 2440587.5;
 		foreach ($json as $wbo_data)
 		{
 			$wbo = new wbo();
@@ -232,7 +233,8 @@
 			}
 			
 			$wbo->collection($collection);
-			$wbo->modified(time() / 86400 + 2440587.5);
+			$wbo->modified($modified);
+			
 			if (!$wbo->encoding()) { $wbo->encoding('utf-8'); }
 
 			if ($wbo->validate())
@@ -245,14 +247,14 @@
 				{
 					report_problem($e->getMessage(), $e->getCode());
 				}
-				$success_ids[$wbo->id()] = $wbo->modified();
+				$success_ids[] = $wbo->id();
 			}
 			else
 			{
 				$failed_ids[$wbo->id()] = $wbo->get_error();
 			}
 		}
-		echo json_encode(array('success' => $success_ids, 'failed' => $failed_ids));
+		echo json_encode(array('modified' => (string)$modified, 'success' => $success_ids, 'failed' => $failed_ids));
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 	{
