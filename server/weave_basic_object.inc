@@ -110,7 +110,7 @@ class wbo
 		return array_key_exists('encoding', $this->wbo_hash) ?  $this->wbo_hash{'encoding'} : "";
 	}
 
-	function payload(&$payload = null)
+	function payload($payload = null)
 	{
 		if ($payload){ $this->wbo_hash{'payload'} = $payload; }
 		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash{'payload'} : null;
@@ -141,7 +141,10 @@ class wbo
 		{ $this->_error[] = "invalid collection"; }
 		
 		
-		if (getenv('WEAVE_PAYLOAD_MAX_SIZE') && strlen($this->payload()) > getenv('WEAVE_PAYLOAD_MAX_SIZE'))
+		if (!is_string($this->wbo_hash{'payload'}))
+		{ $this->_error[] = "payload needs to be json-encoded"; }
+		
+		if (getenv('WEAVE_PAYLOAD_MAX_SIZE') && strlen($this->wbo_hash{'payload'}) > getenv('WEAVE_PAYLOAD_MAX_SIZE'))
 		{ $this->_error[] = "payload too large"; }
 		
 		return !$this->get_error();

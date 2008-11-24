@@ -170,15 +170,7 @@ class WeaveStorageMysql implements WeaveStorage
 			$sth->bindParam(':encryption', $wbo->encryption());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':encoding', $wbo->encoding());
-			$payload = $wbo->payload();
-			if (is_object($payload) || is_array($payload))
-			{
-				$sth->bindParam(':payload', json_encode($payload));
-			}
-			else
-			{
-				$sth->bindParam(':payload', $payload);
-			}
+			$sth->bindParam(':payload', $wbo->payload());
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -247,20 +239,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$payload = null;
-		
-		#payload can either be a json object, or a string. If it happens to be a string that
-		#starts like a json object, odds that it parses are infinitesmal, and we can fall through.
-		if ($result{'payload'}{0} == '[' || $result{'payload'}{0} == '{')
-		{
-			$payload = json_decode($result{'payload'});
-		}
-		
-		if (!$payload)
-		{
-			$payload = $result{'payload'};
-		}
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $payload);
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
 		return $wbo;
 	}
 	
@@ -319,17 +298,7 @@ class WeaveStorageMysql implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$payload = null;
-				if ($result{'payload'}{0} == '[' || $result{'payload'}{0} == '{')
-				{
-					$payload = json_decode($result{'payload'});
-				}
-				
-				if (!$payload)
-				{
-					$payload = $result{'payload'};
-				}
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $payload);
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
 				$ids[] = $wbo;
 			}
 			else
@@ -427,15 +396,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			$sth->bindParam(':encryption', $wbo->encryption());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':encoding', $wbo->encoding());
-			$payload = $wbo->payload();
-			if (is_object($payload) || is_array($payload))
-			{
-				$sth->bindParam(':payload', json_encode($payload));
-			}
-			else
-			{
-				$sth->bindParam(':payload', $payload);
-			}
+			$sth->bindParam(':payload', $wbo->payload());
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -500,17 +461,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$payload = null;
-		if ($result{'payload'}{0} == '[' || $result{'payload'}{0} == '{')
-		{
-			$payload = json_decode($result{'payload'});
-		}
-		
-		if (!$payload)
-		{
-			$payload = $result{'payload'};
-		}
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $payload);
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
 		return $wbo;
 	}
 	
@@ -569,17 +520,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$payload = null;
-				if ($result{'payload'}{0} == '[' || $result{'payload'}{0} == '{')
-				{
-					$payload = json_decode($result{'payload'});
-				}
-				
-				if (!$payload)
-				{
-					$payload = $result{'payload'};
-				}
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $payload);
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
 				$ids[] = $wbo;
 			}
 			else
