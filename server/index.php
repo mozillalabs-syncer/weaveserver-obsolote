@@ -40,6 +40,7 @@
 	require_once 'weave_storage.php';
 	require_once 'weave_authentication.php';
 	require_once 'weave_basic_object.php';
+	require_once 'weave_constants.php';
 	
 	
 	function jsonize($obj) { return $obj->json(); }
@@ -99,13 +100,13 @@
 	
 
 	#user passes, onto actually getting the data
-	$db = get_storage_object($username, null, getenv('WEAVE_SHARE_DBH') ? $authdb->get_connection() : null);	
+	$db = get_storage_object($username, null, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
 	
 
 	if ($_SERVER['REQUEST_METHOD'] == 'GET')
 	{
 
-		if (getenv('WEAVE_USER_MATCH_READ') && $auth_user != $username)
+		if (WEAVE_USER_MATCH_READ && $auth_user != $username)
 		{
 			report_problem("5", 401);
 		}
@@ -162,7 +163,7 @@
 	else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #add a single record to the server
 	{
 
-		if (getenv('WEAVE_USER_MATCH_WRITE') && $auth_user != $username)
+		if (WEAVE_USER_MATCH_WRITE && $auth_user != $username)
 		{
 			report_problem("5", 401);
 		}
@@ -204,7 +205,7 @@
 	else if ($_SERVER['REQUEST_METHOD'] == 'POST')
 	{
 	
-		if (getenv('WEAVE_USER_MATCH_WRITE') && $auth_user != $username)
+		if (WEAVE_USER_MATCH_WRITE && $auth_user != $username)
 		{
 			report_problem("5", 401);
 		}
@@ -259,7 +260,7 @@
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 	{
 
-		if (getenv('WEAVE_USER_MATCH_WRITE') && $auth_user != $username)
+		if (WEAVE_USER_MATCH_WRITE && $auth_user != $username)
 		{
 			report_problem("5", 401);
 		}

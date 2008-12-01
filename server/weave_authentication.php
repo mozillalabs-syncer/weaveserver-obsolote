@@ -37,11 +37,13 @@
 #
 # ***** END LICENSE BLOCK *****
 	
+require_once 'weave_constants.php';
+
 function get_auth_object($type = null)
 {
 	if (!$type)
 	{
-		$type = getenv('WEAVE_AUTH_ENGINE');
+		$type = WEAVE_AUTH_ENGINE;
 	}
 	
 	switch($type)
@@ -176,10 +178,10 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 
 	function open_connection() 
 	{ 
-		$hostname = getenv('WEAVE_MYSQL_AUTH_HOST');
-		$dbname = getenv('WEAVE_MYSQL_AUTH_DB');
-		$dbuser = getenv('WEAVE_MYSQL_AUTH_USER');
-		$dbpass = getenv('WEAVE_MYSQL_AUTH_PASS');
+		$hostname = WEAVE_MYSQL_AUTH_HOST;
+		$dbname = WEAVE_MYSQL_AUTH_DB;
+		$dbuser = WEAVE_MYSQL_AUTH_USER;
+		$dbpass = WEAVE_MYSQL_AUTH_PASS;
 		
 		try
 		{
@@ -416,7 +418,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	
 	function open_connection()
 	{
-		$db_name = getenv('WEAVE_SQLITE_AUTH_DIRECTORY') . '/_users';
+		$db_name = WEAVE_SQLITE_AUTH_DIRECTORY . '/_users';
 		
 		try
 		{

@@ -37,6 +37,8 @@
 #
 # ***** END LICENSE BLOCK *****
 
+require_once 'weave_constants.php';
+
 class wbo
 {
 	var $wbo_hash = array();
@@ -144,7 +146,7 @@ class wbo
 		if (!is_string($this->wbo_hash['payload']))
 		{ $this->_error[] = "payload needs to be json-encoded"; }
 		
-		if (getenv('WEAVE_PAYLOAD_MAX_SIZE') && strlen($this->wbo_hash['payload']) > getenv('WEAVE_PAYLOAD_MAX_SIZE'))
+		if (WEAVE_PAYLOAD_MAX_SIZE && strlen($this->wbo_hash['payload']) > WEAVE_PAYLOAD_MAX_SIZE)
 		{ $this->_error[] = "payload too large"; }
 		
 		return !$this->get_error();

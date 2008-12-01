@@ -39,6 +39,7 @@
 
 	require_once 'weave_authentication.php';
 	require_once 'weave_storage.php';
+	require_once 'weave_constants.php';
 
 	function report_problem($message, $code = 503)
 	{
@@ -58,7 +59,7 @@
 		report_problem("Illegal Method", 405);
 	}
 
-	if (getenv('WEAVE_USER_ADMIN_SECRET') != (ini_get('magic_quotes_gpc') ? stripslashes($_POST['secret']) : $_POST['secret']))
+	if (WEAVE_USER_ADMIN_SECRET != (ini_get('magic_quotes_gpc') ? stripslashes($_POST['secret']) : $_POST['secret']))
 	{
 		report_problem("Secret missing or incorrect", 400);
 	}
@@ -71,6 +72,8 @@
 	try
 	{
 		$authdb = get_auth_object();
+		
+		#can't initiate the storage object yet, since may not have created the user
 		$storagedb = get_storage_object($username, null, 1);
 		
 		switch($_POST['function'])

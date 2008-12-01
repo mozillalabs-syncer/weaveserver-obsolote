@@ -38,6 +38,7 @@
 # ***** END LICENSE BLOCK *****
 	
 require_once 'weave_basic_object.php';
+require_once 'weave_constants.php';
 
 
 #Returns the storage object. Takes three arguments
@@ -50,7 +51,7 @@ function get_storage_object($username, $type = null, $dbh = null)
 {
 	if (!$type)
 	{
-		$type = getenv('WEAVE_STORAGE_ENGINE');
+		$type = WEAVE_STORAGE_ENGINE;
 	}
 	
 	switch($type)
@@ -134,10 +135,10 @@ class WeaveStorageMysql implements WeaveStorage
 
 	function open_connection() 
 	{ 
-		$hostname = getenv('WEAVE_MYSQL_STORE_HOST');
-		$dbname = getenv('WEAVE_MYSQL_STORE_DB');
-		$username = getenv('WEAVE_MYSQL_STORE_USER');
-		$password = getenv('WEAVE_MYSQL_STORE_PASS');
+		$hostname = WEAVE_MYSQL_STORE_HOST;
+		$dbname = WEAVE_MYSQL_STORE_DB;
+		$username = WEAVE_MYSQL_STORE_USER;
+		$password = WEAVE_MYSQL_STORE_PASS;
 		
 		try
 		{
@@ -360,7 +361,7 @@ class WeaveStorageSqlite implements WeaveStorage
 	function open_connection()
 	{
 		$username_md5 = md5($this->_username);
-		$db_name = getenv('WEAVE_SQLITE_STORE_DIRECTORY') . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
+		$db_name = WEAVE_SQLITE_STORE_DIRECTORY . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
 
 		if (!file_exists($db_name))
 		{
@@ -540,7 +541,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 		
 		#make sure our path exists
-		$path = getenv('WEAVE_SQLITE_STORE_DIRECTORY') . '/' . $username_md5{0};
+		$path = WEAVE_SQLITE_STORE_DIRECTORY . '/' . $username_md5{0};
 		if (!is_dir($path)) { mkdir ($path); }
 		$path .= '/' . $username_md5{1};
 		if (!is_dir($path)) { mkdir ($path); }
@@ -590,7 +591,7 @@ end;
 	function delete_user()
 	{
 		$username_md5 = md5($this->_username);
-		$db_name = getenv('WEAVE_SQLITE_STORE_DIRECTORY') . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
+		$db_name = WEAVE_SQLITE_STORE_DIRECTORY . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
 		unlink($db_name);
 	}
 }

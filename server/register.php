@@ -39,6 +39,7 @@
 
 	require_once 'weave_authentication.php';
 	require_once 'weave_storage.php';
+	require_once 'weave_constants.php';
 
 	function report_problem($message, $code = 503)
 	{
@@ -85,7 +86,7 @@
 			case 'new':
 				if ($_SERVER['REQUEST_METHOD'] == 'GET')
 				{
-					if (getenv('WEAVE_REGISTER_USE_CAPTCHA'))
+					if (WEAVE_REGISTER_USE_CAPTCHA)
 					{
 						require_once 'captcha.inc';
 						print captcha_html();
@@ -93,7 +94,7 @@
 				}
 				else
 				{
-					if (getenv('WEAVE_REGISTER_USE_CAPTCHA'))
+					if (WEAVE_REGISTER_USE_CAPTCHA)
 					{
 						require_once 'captcha.inc';
  						$challenge = array_key_exists('recaptcha_challenge_field', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['recaptcha_challenge_field']) : $_POST['recaptcha_challenge_field']) : null;

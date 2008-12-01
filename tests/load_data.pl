@@ -63,7 +63,7 @@ if ($DO_ADMIN_TESTS)
 	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
 	$req->content_type('application/x-www-form-urlencoded');
 	print "create user: " . $ua->request($req)->content() . "\n";
-	
+
 	#create the user again
 	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
 	$req->content_type('application/x-www-form-urlencoded');
