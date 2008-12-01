@@ -37,9 +37,9 @@
 #
 # ***** END LICENSE BLOCK *****
 
-	require_once 'weave_storage.inc';
-	require_once 'weave_authentication.inc';
-	require_once 'weave_basic_object.inc';
+	require_once 'weave_storage.php';
+	require_once 'weave_authentication.php';
+	require_once 'weave_basic_object.php';
 	
 	
 	function jsonize($obj) { return $obj->json(); }
@@ -181,7 +181,7 @@
 		if (!$wbo->id() && $id) { $wbo->id($id); }
 		
 		$wbo->collection($collection);
-		$wbo->modified(time() / 86400 + 2440587.5); #current julian time
+		$wbo->modified(microtime(1) / 86400 + 2440587.5); #current julian time
 		if (!$wbo->encoding()) { $wbo->encoding('utf-8'); }
 
 		if ($wbo->validate())
@@ -223,7 +223,7 @@
 		$success_ids = array();
 		$failed_ids = array();
 		
-		$modified = time() / 86400 + 2440587.5;
+		$modified = microtime(1) / 86400 + 2440587.5;
 		foreach ($json as $wbo_data)
 		{
 			$wbo = new wbo();

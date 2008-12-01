@@ -37,8 +37,8 @@
 #
 # ***** END LICENSE BLOCK *****
 
-	require_once 'weave_authentication.inc';
-	require_once 'weave_storage.inc';
+	require_once 'weave_authentication.php';
+	require_once 'weave_storage.php';
 
 	function report_problem($message, $code = 503)
 	{
