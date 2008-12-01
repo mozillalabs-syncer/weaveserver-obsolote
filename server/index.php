@@ -100,7 +100,14 @@
 	
 
 	#user passes, onto actually getting the data
-	$db = get_storage_object($username, null, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+	try
+	{
+		$db = get_storage_object($username, null, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+	}
+	catch(Exception $e)
+	{
+		report_problem($e->getMessage(), $e->getCode());
+	}
 	
 
 	if ($_SERVER['REQUEST_METHOD'] == 'GET')
