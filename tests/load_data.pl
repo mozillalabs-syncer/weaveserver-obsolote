@@ -98,7 +98,7 @@ foreach (1..10)
 {
 
 	$id++;
-	my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 	$req->authorization_basic($USERNAME, $PASSWORD);
 	$req->content($json);
@@ -113,7 +113,7 @@ foreach (1..10)
 {
 
 	$id++;
-	$batch .= ', {"id": "' . $id . '","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	$batch .= ', {"id": "' . $id . '","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 }
 
 $batch =~ s/^,/[/;
@@ -127,7 +127,7 @@ $req->content_type('application/x-www-form-urlencoded');
 print "batch upload: " . $ua->request($req)->content() . "\n";
 
 #do a replace
-my $json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
@@ -137,7 +137,7 @@ print "replace: " . $ua->request($req)->content() . "\n";
 
 #do a bad put (no id)
 
-my $json = '{"id": "","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $json = '{"id": "","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
@@ -147,7 +147,7 @@ print "bad PUT (no id): " . $ua->request($req)->content() . "\n";
 
 #do a bad put (bad json)
 
-$json = '{"id": ","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+$json = '{"id": ","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
@@ -158,7 +158,7 @@ print "bad PUT (bad json): " . $ua->request($req)->content() . "\n";
 
 #do a bad put (no auth)
 
-$json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
@@ -167,7 +167,7 @@ print "bad PUT (no auth): " . $ua->request($req)->content() . "\n";
 
 #do a bad put (wrong pw)
 
-$json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, 'badpassword');
 $req->content($json);
@@ -177,7 +177,7 @@ print "bad PUT (wrong pw): " . $ua->request($req)->content() . "\n";
 
 #do a bad put (payload not json encoded)
 
-$json = '{"id": "2","parentid":"' . ($id%3). '","encryption":"","modified":"' . (2454725.98283 + int(rand(60))) . '","encoding":"utf8","payload":["a", "b"]}';
+$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":["a", "b"]}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);

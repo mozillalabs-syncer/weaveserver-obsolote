@@ -113,7 +113,7 @@
 	if ($_SERVER['REQUEST_METHOD'] == 'GET')
 	{
 
-		if (WEAVE_USER_MATCH_READ && $auth_user != $username)
+		if ($auth_user != $username)
 		{
 			report_problem("5", 401);
 		}
@@ -170,7 +170,7 @@
 	else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #add a single record to the server
 	{
 
-		if (WEAVE_USER_MATCH_WRITE && $auth_user != $username)
+		if ($auth_user != $username)
 		{
 			report_problem("5", 401);
 		}
@@ -190,7 +190,6 @@
 		
 		$wbo->collection($collection);
 		$wbo->modified(microtime(1) / 86400 + 2440587.5); #current julian time
-		if (!$wbo->encoding()) { $wbo->encoding('utf-8'); }
 
 		if ($wbo->validate())
 		{
@@ -212,7 +211,7 @@
 	else if ($_SERVER['REQUEST_METHOD'] == 'POST')
 	{
 	
-		if (WEAVE_USER_MATCH_WRITE && $auth_user != $username)
+		if ($auth_user != $username)
 		{
 			report_problem("5", 401);
 		}
@@ -243,7 +242,6 @@
 			$wbo->collection($collection);
 			$wbo->modified($modified);
 			
-			if (!$wbo->encoding()) { $wbo->encoding('utf-8'); }
 
 			if ($wbo->validate())
 			{
@@ -267,7 +265,7 @@
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 	{
 
-		if (WEAVE_USER_MATCH_WRITE && $auth_user != $username)
+		if ($auth_user != $username)
 		{
 			report_problem("5", 401);
 		}

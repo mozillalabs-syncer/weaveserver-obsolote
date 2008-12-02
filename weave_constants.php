@@ -85,14 +85,6 @@ if (!defined(WEAVE_SHARE_DBH)) { define('WEAVE_SHARE_DBH', 1); }
 #The maximum size of a payload (set to 0 for unlimited) in bytes. Watch out for large characters!
 if (!defined(WEAVE_PAYLOAD_MAX_SIZE)) { define('WEAVE_PAYLOAD_MAX_SIZE', 262144); } #256K
 
-#If set, forces the authenticated username to match the requested store username for 
-#reading. Recommended
-if (!defined(WEAVE_USER_MATCH_READ)) { define('WEAVE_USER_MATCH_READ', 1); } 
-
-#If set, forces the authenticated username to match the requested store username for 
-#writing. Strongly recommended
-if (!defined(WEAVE_USER_MATCH_WRITE)) { define('WEAVE_USER_MATCH_WRITE', 1); } 
-
 #requires the server to use a captcha when creating new accounts
 if (!defined(WEAVE_REGISTER_USE_CAPTCHA)) { define('WEAVE_REGISTER_USE_CAPTCHA', 1); }
 

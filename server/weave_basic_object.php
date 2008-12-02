@@ -58,21 +58,17 @@ class wbo
 		
 		$this->id($extracted['id']);
 		$this->parentid($extracted['parentid']);
-		$this->encryption($extracted['encryption']);
 		
 		$this->payload($extracted['payload']);
-		$this->encoding($extracted['encoding']);
 		return 1;
 	}
 	
-	function populate($id, $collection, $parent = '', $encryption = '', $modified, $encoding = 'utf8', $payload)
+	function populate($id, $collection, $parent = '', $modified, $payload)
 	{
 		$this->id($id);
 		$this->collection($collection);
 		$this->parentid($parent);
-		$this->encryption($encryption);
 		$this->modified($modified);
-		$this->encoding($encoding);
 		$this->payload($payload);
 	}
 
@@ -94,24 +90,12 @@ class wbo
 		return array_key_exists('parentid', $this->wbo_hash) ?  $this->wbo_hash['parentid'] : "";
 	}
 	
-	function encryption($encryption = null)
-	{
-		if ($encryption){ $this->wbo_hash['encryption'] = $encryption; }
-		return array_key_exists('encryption', $this->wbo_hash) ? $this->wbo_hash['encryption'] : "";
-	}
-
 	function modified($modified = null)
 	{
 		if ($modified){ $this->wbo_hash['modified'] = $modified; }
 		return array_key_exists('modified', $this->wbo_hash) ?  $this->wbo_hash['modified'] : "";
 	}
 	
-	function encoding($encoding = null)
-	{
-		if ($encoding){ $this->wbo_hash['encoding'] = $encoding; }
-		return array_key_exists('encoding', $this->wbo_hash) ?  $this->wbo_hash['encoding'] : "";
-	}
-
 	function payload($payload = null)
 	{
 		if ($payload){ $this->wbo_hash['payload'] = $payload; }
@@ -130,12 +114,6 @@ class wbo
 		if (!is_numeric($this->modified()))
 		{ $this->_error[] = "invalid modified date"; }
 		
-		if ($this->encryption() && strlen($this->encryption()) > 256)
-		{ $this->_error[] = "invalid encryption"; }
-
-		if ($this->encoding() && strlen($this->encoding()) > 16)
-		{ $this->_error[] = "invalid encryption"; }
-
 		if (!$this->modified())
 		{ $this->_error[] = "no modification date"; }
 

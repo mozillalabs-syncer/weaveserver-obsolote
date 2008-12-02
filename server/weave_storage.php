@@ -105,9 +105,7 @@ interface WeaveStorage
 # collection varchar(64),
 # id varchar(64),
 # parentid varchar(64),
-# encryption text,
 # modified float,
-# encoding varchar(16),
 # payload text,
 # primary key(username, collection, id),
 # index parentindex(username, collection, parentid),
@@ -162,15 +160,14 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		try
 		{
-			$insert_stmt = 'replace into wbo (username, id, collection, parentid, encryption, modified, encoding, payload) values (:username, :id, :collection, :parentid, :encryption, :modified, :encoding, :payload)';
+			$insert_stmt = 'replace into wbo (username, id, collection, parentid, modified, payload) 
+					values (:username, :id, :collection, :parentid, :modified, :payload)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->bindParam(':id', $wbo->id());
 			$sth->bindParam(':collection', $wbo->collection());
 			$sth->bindParam(':parentid', $wbo->parentid());
-			$sth->bindParam(':encryption', $wbo->encryption());
 			$sth->bindParam(':modified', $wbo->modified());
-			$sth->bindParam(':encoding', $wbo->encoding());
 			$sth->bindParam(':payload', $wbo->payload());
 			$sth->execute();
 		}
@@ -240,7 +237,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
 		return $wbo;
 	}
 	
@@ -299,7 +296,7 @@ class WeaveStorageMysql implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
 				$ids[] = $wbo;
 			}
 			else
@@ -389,14 +386,13 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'replace into wbo (id, collection, parentid, encryption, modified, encoding, payload) values (:id, :collection, :parentid, :encryption, :modified, :encoding, :payload)';
+			$insert_stmt = 'replace into wbo (id, collection, parentid, modified, payload) 
+					values (:id, :collection, :parentid, :modified, :payload)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':id', $wbo->id());
 			$sth->bindParam(':collection', $wbo->collection());
 			$sth->bindParam(':parentid', $wbo->parentid());
-			$sth->bindParam(':encryption', $wbo->encryption());
 			$sth->bindParam(':modified', $wbo->modified());
-			$sth->bindParam(':encoding', $wbo->encoding());
 			$sth->bindParam(':payload', $wbo->payload());
 			$sth->execute();
 		}
@@ -462,7 +458,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
 		return $wbo;
 	}
 	
@@ -521,7 +517,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'encryption'}, $result{'modified'}, $result{'encoding'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
 				$ids[] = $wbo;
 			}
 			else
@@ -559,9 +555,7 @@ create table wbo
  id text,
  collection text,
  parentid text,
- encryption text,
  modified real,
- encoding text,
  payload text,
  primary key (collection,id)
 )
