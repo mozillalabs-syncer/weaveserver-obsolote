@@ -80,13 +80,13 @@ elseif (WEAVE_AUTH_ENGINE == 'sqlite')
 
 #if you are using mysql for both auth and storage and they live in the same table, you may
 #share the database handle
-if (!defined(WEAVE_SHARE_DBH)) { define('WEAVE_SHARE_DBH', 1); }
+if (!defined(WEAVE_SHARE_DBH)) { define('WEAVE_SHARE_DBH', 0); }
 
 #The maximum size of a payload (set to 0 for unlimited) in bytes. Watch out for large characters!
 if (!defined(WEAVE_PAYLOAD_MAX_SIZE)) { define('WEAVE_PAYLOAD_MAX_SIZE', 262144); } #256K
 
 #requires the server to use a captcha when creating new accounts
-if (!defined(WEAVE_REGISTER_USE_CAPTCHA)) { define('WEAVE_REGISTER_USE_CAPTCHA', 1); }
+if (!defined(WEAVE_REGISTER_USE_CAPTCHA)) { define('WEAVE_REGISTER_USE_CAPTCHA', 0); }
 
 
 
