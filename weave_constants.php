@@ -38,12 +38,12 @@
 # ***** END LICENSE BLOCK *****
 
 #secret using the admin interface, if you are doing so
-if (!defined(WEAVE_USER_ADMIN_SECRET)) { define('WEAVE_USER_ADMIN_SECRET', 'bad secret'); }
+if (!defined('WEAVE_USER_ADMIN_SECRET')) { define('WEAVE_USER_ADMIN_SECRET', 'bad secret'); }
 
 
 #engine for storage.
 #Acceptable values: mysql | sqlite | none
-if (!defined(WEAVE_STORAGE_ENGINE)) { define('WEAVE_STORAGE_ENGINE', 'mysql'); }
+if (!defined('WEAVE_STORAGE_ENGINE')) { define('WEAVE_STORAGE_ENGINE', 'mysql'); }
 
 if (WEAVE_STORAGE_ENGINE == 'mysql')
 {
