@@ -105,6 +105,8 @@ interface WeaveStorage
 # collection varchar(64),
 # id varchar(64),
 # parentid varchar(64),
+# sortindex int default null,
+# depth tinyint default null, 
 # modified float,
 # payload text,
 # primary key(username, collection, id),
@@ -158,15 +160,18 @@ class WeaveStorageMysql implements WeaveStorage
 	
 	function store_object(&$wbo) 
 	{
+		
 		try
 		{
-			$insert_stmt = 'replace into wbo (username, id, collection, parentid, modified, payload) 
-					values (:username, :id, :collection, :parentid, :modified, :payload)';
+			$insert_stmt = 'replace into wbo (username, id, collection, parentid, depth, sortindex, modified, payload) 
+					values (:username, :id, :collection, :parentid, :depth, :sortindex, :modified, :payload)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->bindParam(':id', $wbo->id());
 			$sth->bindParam(':collection', $wbo->collection());
 			$sth->bindParam(':parentid', $wbo->parentid());
+			$sth->bindParam(':depth', $wbo->depth());
+			$sth->bindParam(':sortindex', $wbo->sortindex());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':payload', $wbo->payload());
 			$sth->execute();
@@ -178,6 +183,61 @@ class WeaveStorageMysql implements WeaveStorage
 		}
 		return 1;
 	
+	}
+	
+	function update_object(&$wbo)
+	{
+		$update = "update wbo set ";
+		$params = array();
+		$update_list = array();
+		
+		if ($wbo->parentid_exists())
+		{
+			$update_list[] = "parent_id = ?";
+			$params[] = $wbo->parentid();
+		}
+		
+		if ($wbo->depth_exists())
+		{
+			$update_list[] = "depth = ?";
+			$params[] = $wbo->depth();
+		}
+		
+		if ($wbo->sortindex_exists())
+		{
+			$update_list[] = "sortindex = ?";
+			$params[] = $wbo->sortindex();
+		}
+		
+		if ($wbo->parentid_exists() || $wbo->sortindex_exists()) # Don't modify the timestamp on a depth-only change
+		{
+			$update_list[] = "modified = ?";
+			$params[] = $wbo->modified();
+
+		}
+		
+		if (count($params) == 0)
+		{
+			return 0;
+		}
+		
+		$update .= join($update_list, ",");
+
+		$update .= " where username = ? and collection = ? and id = ?";
+		$params[] = $this->_username;
+		$params[] = $wbo->collection();
+		$params[] = $wbo->id();
+		try
+		{
+			$sth = $this->_dbh->prepare($update);
+			$sth->execute($params);
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;		
 	}
 	
 	function delete_object($collection, $id)
@@ -237,11 +297,12 @@ class WeaveStorageMysql implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null)
+	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, 
+								$sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
 		
@@ -268,6 +329,20 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $modified;
 		}
 	
+		if ($sort == 'index')
+		{
+error_log("ordering by index!");
+			$select_stmt .= " order by sortindex";
+		}
+		else if ($sort == 'date')
+		{
+			$select_stmt .= " order by modified";
+		}
+		else if ($sort == 'depthindex')
+		{
+			$select_stmt .= " order by depth,sortindex";
+		}
+		
 		if ($limit)
 		{
 			$select_stmt .= " limit ?";
@@ -296,7 +371,7 @@ class WeaveStorageMysql implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
 				$ids[] = $wbo;
 			}
 			else
@@ -404,6 +479,63 @@ class WeaveStorageSqlite implements WeaveStorage
 		return 1;
 	}
 	
+	
+	function update_object(&$wbo)
+	{
+		$update = "update wbo set ";
+		$params = array();
+		$update_list = array();
+		
+		if ($wbo->parentid_exists())
+		{
+			$update_list[] = " parent_id = ?";
+			$params[] = $wbo->parentid();
+		}
+		
+		if ($wbo->depth_exists())
+		{
+			$update_list[] = " depth = ?";
+			$params[] = $wbo->depth();
+		}
+		
+		if ($wbo->sortindex_exists())
+		{
+			$update_list[] = " sortindex = ?";
+			$params[] = $wbo->sortindex();
+		}
+
+		if ($wbo->parentid_exists() || $wbo->sortindex_exists()) # Don't modify the timestamp on a depth-only change
+		{
+			$update_list[] = " modified = ?";
+			$params[] = $wbo->modified();
+
+		}
+		
+		
+		if (count($params) == 0)
+		{
+			return 0;
+		}
+		
+		$update .= join($update_list, ",");
+
+		$update .= " where collection = ? and id = ?";
+		$params[] = $wbo->collection();
+		$params[] = $wbo->id();
+		
+		try
+		{
+			$sth = $this->_dbh->prepare($update);
+			$sth->execute($params);
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_object: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;		
+	}
+	
 	function delete_object($collection, $id)
 	{
 		try
@@ -458,11 +590,11 @@ class WeaveStorageSqlite implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
+		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null)
+	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
 			
@@ -489,6 +621,19 @@ class WeaveStorageSqlite implements WeaveStorage
 			$params[] = $modified;
 		}
 	
+		if ($sort == 'index')
+		{
+			$select_stmt .= " order by sortindex";
+		}
+		else if ($sort == 'date')
+		{
+			$select_stmt .= " order by modified";
+		}
+		else if ($sort == 'depthindex')
+		{
+			$select_stmt .= " order by depth,sortindex";
+		}
+		
 		if ($limit)
 		{
 			$select_stmt .= " limit ?";
@@ -517,7 +662,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
 				$ids[] = $wbo;
 			}
 			else

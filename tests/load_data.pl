@@ -98,7 +98,7 @@ foreach (1..10)
 {
 
 	$id++;
-	my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","sortindex":' . $id. ',"depth":1,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 	$req->authorization_basic($USERNAME, $PASSWORD);
 	$req->content($json);
@@ -113,7 +113,7 @@ foreach (1..10)
 {
 
 	$id++;
-	$batch .= ', {"id": "' . $id . '","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	$batch .= ', {"id": "' . $id . '","parentid":"' . ($id%3). '","sortindex":' . $id. ',"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 }
 
 $batch =~ s/^,/[/;
@@ -126,8 +126,11 @@ $req->content_type('application/x-www-form-urlencoded');
 
 print "batch upload: " . $ua->request($req)->content() . "\n";
 
+
+
+
 #do a replace
-my $json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
@@ -135,15 +138,27 @@ $req->content_type('application/x-www-form-urlencoded');
 
 print "replace: " . $ua->request($req)->content() . "\n";
 
-#do a bad put (no id)
+#do a partial replace
 
-my $json = '{"id": "","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $json = '{"id": "3","depth":2}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
 
+print "replace: " . $ua->request($req)->content() . "\n";
+
+
+#do a bad put (no id)
+
+my $json = '{"id": "","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content($json);
+$req->content_type('application/x-www-form-urlencoded');
+
 print "bad PUT (no id): " . $ua->request($req)->content() . "\n";
+
 
 #do a bad put (bad json)
 
@@ -210,6 +225,21 @@ print "mixed batch upload (bad parentids on some): " . $ua->request($req)->conte
 $req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "should return [\"1\", \"2\" .. \"20\"] (in some order): " . $ua->request($req)->content() . "\n";
+
+# should return ["1", "2" .. "20"]
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=index";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "should return [\"1\", \"2\" .. \"20\"] (in order): " . $ua->request($req)->content() . "\n";
+
+# should return ["1", "2" .. "20"]
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=depthindex";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "should return [\"1\", \"2\" .. \"20\"] (3 at end): " . $ua->request($req)->content() . "\n";
+
+# should return the user id record for #3 (check the depth)
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/3";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "should return record 3 (replaced depth): " . $ua->request($req)->content() . "\n";
 
 # should return the user id record for #4
 $req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/4";

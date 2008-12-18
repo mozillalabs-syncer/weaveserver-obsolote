@@ -144,7 +144,12 @@
 			$full = array_key_exists('full', $_GET) ? $_GET['full'] : null;
 			try 
 			{
-				$ids = $db->retrieve_objects($collection, null, $full, array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, array_key_exists('modified', $_GET) ? $_GET['modified'] : null, array_key_exists('limit', $_GET) ? $_GET['limit'] : null, array_key_exists('offset', $_GET) ? $_GET['offset'] : null);
+				$ids = $db->retrieve_objects($collection, null, $full, 
+							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
+							array_key_exists('modified', $_GET) ? $_GET['modified'] : null, 
+							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
+							array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
+							array_key_exists('offset', $_GET) ? $_GET['offset'] : null);
 			}
 			catch(Exception $e)
 			{
@@ -195,7 +200,15 @@
 		{
 			try
 			{
-				$db->store_object($wbo);
+				#if there's no payload (as opposed to blank), then update the metadata
+				if ($wbo->payload_exists())
+				{
+					$db->store_object($wbo);
+				}
+				else
+				{
+					$db->update_object($wbo);
+				}
 			}
 			catch (Exception $e)
 			{
@@ -247,7 +260,15 @@
 			{
 				try
 				{
-					$db->store_object($wbo);
+					#if there's no payload (as opposed to blank), then update the metadata
+					if ($wbo->payload_exists())
+					{
+						$db->store_object($wbo);
+					}
+					else
+					{
+						$db->update_object($wbo);
+					}
 				}
 				catch (Exception $e)
 				{
