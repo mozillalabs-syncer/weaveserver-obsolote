@@ -331,7 +331,6 @@ class WeaveStorageMysql implements WeaveStorage
 	
 		if ($sort == 'index')
 		{
-error_log("ordering by index!");
 			$select_stmt .= " order by sortindex";
 		}
 		else if ($sort == 'date')
