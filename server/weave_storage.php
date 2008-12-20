@@ -130,27 +130,22 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$this->_dbh = $dbh;
 		}
-		#otherwise we do nothing with the connection
+		#otherwise we do nothing with the connection and wait for it to be directly opened
 	}
 
 	function open_connection() 
-	{ 
-		$hostname = WEAVE_MYSQL_STORE_HOST;
-		$dbname = WEAVE_MYSQL_STORE_DB;
-		$username = WEAVE_MYSQL_STORE_USER;
-		$password = WEAVE_MYSQL_STORE_PASS;
-		
+	{		
 		try
 		{
-			$this->_dbh = new PDO('mysql:host=' . $hostname . ';dbname=' . $dbname, $username, $password);
+			$this->_dbh = new PDO('mysql:host=' . WEAVE_MYSQL_STORE_HOST . ';dbname=' . WEAVE_MYSQL_STORE_DB, 
+									WEAVE_MYSQL_STORE_USER, WEAVE_MYSQL_STORE_PASS);
 			$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		}
 		catch( PDOException $exception )
 		{
-				error_log($exception->getMessage());
-				throw new Exception("Database unavailable", 503);
+			error_log($exception->getMessage());
+			throw new Exception("Database unavailable", 503);
 		}
-		
 	}
 	
 	function get_connection()
@@ -209,7 +204,16 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $wbo->sortindex();
 		}
 		
-		if ($wbo->parentid_exists() || $wbo->sortindex_exists()) # Don't modify the timestamp on a depth-only change
+		#Under standard weave semantics, update will not be called if there's no payload. 
+		#However, this is included for functional completion
+		if ($wbo->payload_exists())
+		{
+			$update_list[] = "payload = ?";
+			$params[] = $wbo->payload();
+		}
+		
+		# Don't modify the timestamp on a depth-only change. It's purely for sorting trees.
+		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
 		{
 			$update_list[] = "modified = ?";
 			$params[] = $wbo->modified();
@@ -333,7 +337,11 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$select_stmt .= " order by sortindex";
 		}
-		else if ($sort == 'date')
+		else if ($sort == 'newest')
+		{
+			$select_stmt .= " order by modified desc";
+		}
+		else if ($sort == 'oldest')
 		{
 			$select_stmt .= " order by modified";
 		}
@@ -503,7 +511,14 @@ class WeaveStorageSqlite implements WeaveStorage
 			$params[] = $wbo->sortindex();
 		}
 
-		if ($wbo->parentid_exists() || $wbo->sortindex_exists()) # Don't modify the timestamp on a depth-only change
+		if ($wbo->payload_exists())
+		{
+			$update_list[] = "payload = ?";
+			$params[] = $wbo->payload();
+		}
+
+		# Don't modify the timestamp on a depth-only change
+		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
 		{
 			$update_list[] = " modified = ?";
 			$params[] = $wbo->modified();
@@ -624,7 +639,11 @@ class WeaveStorageSqlite implements WeaveStorage
 		{
 			$select_stmt .= " order by sortindex";
 		}
-		else if ($sort == 'date')
+		else if ($sort == 'newest')
+		{
+			$select_stmt .= " order by modified desc";
+		}
+		else if ($sort == 'oldest')
 		{
 			$select_stmt .= " order by modified";
 		}
@@ -700,6 +719,8 @@ create table wbo
  collection text,
  parentid text,
  modified real,
+ sortindex int,
+ depth int,
  payload text,
  primary key (collection,id)
 )
