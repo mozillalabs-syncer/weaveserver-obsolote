@@ -190,7 +190,7 @@ class WeaveStorageMysql implements WeaveStorage
 		if (!$wbo->id() || !$wbo->collection())
 		{
 			error_log('Trying to update without a valid id or collection!');
-			retrun 0;
+			return 0;
 		}
 		
 		if ($wbo->parentid_exists())
@@ -510,7 +510,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		if (!$wbo->id() || !$wbo->collection())
 		{
 			error_log('Trying to update without a valid id or collection!');
-			retrun 0;
+			return 0;
 		}
 
 		if ($wbo->parentid_exists())
