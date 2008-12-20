@@ -56,7 +56,12 @@ class wbo
 			return 0;
 		}
 		
-		$this->id($extracted['id']);
+		#must have an id, or all sorts of badness happens. However, it can be added later
+		if (array_key_exists('id', $extracted))
+		{
+			$this->id($extracted['id']);
+		}
+		
 		if (array_key_exists('parentid', $extracted))
 		{
 			$this->parentid($extracted['parentid']);
@@ -66,6 +71,7 @@ class wbo
 		{
 			$this->depth($extracted['depth']);
 		}
+
 		if (array_key_exists('sortindex', $extracted))
 		{
 			$this->sortindex($extracted['sortindex']);

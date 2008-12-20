@@ -107,7 +107,7 @@ interface WeaveStorage
 # parentid varchar(64),
 # sortindex int default null,
 # depth tinyint default null, 
-# modified float,
+# modified bigint,
 # payload text,
 # primary key(username, collection, id),
 # index parentindex(username, collection, parentid),
@@ -186,6 +186,13 @@ class WeaveStorageMysql implements WeaveStorage
 		$params = array();
 		$update_list = array();
 		
+		#make sure we have an id and collection. No point in continuing otherwise
+		if (!$wbo->id() || !$wbo->collection())
+		{
+			error_log('Trying to update without a valid id or collection!');
+			retrun 0;
+		}
+		
 		if ($wbo->parentid_exists())
 		{
 			$update_list[] = "parent_id = ?";
@@ -215,6 +222,12 @@ class WeaveStorageMysql implements WeaveStorage
 		# Don't modify the timestamp on a depth-only change. It's purely for sorting trees.
 		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
 		{
+			#better make sure we have a modified date. Should have been handled earlier
+			if (!wbo->modfied_exists())
+			{
+				error_log("Called update_object with no defined timestamp. Please check");
+				$wbo->modified(microtime(1) * 1000);
+			}
 			$update_list[] = "modified = ?";
 			$params[] = $wbo->modified();
 
@@ -493,6 +506,13 @@ class WeaveStorageSqlite implements WeaveStorage
 		$params = array();
 		$update_list = array();
 		
+		#make sure we have an id and collection. No point in continuing otherwise
+		if (!$wbo->id() || !$wbo->collection())
+		{
+			error_log('Trying to update without a valid id or collection!');
+			retrun 0;
+		}
+
 		if ($wbo->parentid_exists())
 		{
 			$update_list[] = " parent_id = ?";
@@ -520,6 +540,12 @@ class WeaveStorageSqlite implements WeaveStorage
 		# Don't modify the timestamp on a depth-only change
 		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
 		{
+			#better make sure we have a modified date. Should have been handled earlier
+			if (!wbo->modfied_exists())
+			{
+				error_log("Called update_object with no defined timestamp. Please check");
+				$wbo->modified(microtime(1) * 1000);
+			}
 			$update_list[] = " modified = ?";
 			$params[] = $wbo->modified();
 
@@ -680,7 +706,9 @@ class WeaveStorageSqlite implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, 
+							$result{'modified'}, $result{'depth'}, $result{'sortindex'}, 
+							$result{'payload'});
 				$ids[] = $wbo;
 			}
 			else

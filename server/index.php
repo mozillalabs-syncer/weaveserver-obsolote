@@ -194,7 +194,7 @@
 		if (!$wbo->id() && $id) { $wbo->id($id); }
 		
 		$wbo->collection($collection);
-		$wbo->modified(microtime(1) / 86400 + 2440587.5); #current julian time
+		$wbo->modified(microtime(1) * 1000); #current microtime
 
 		if ($wbo->validate())
 		{
@@ -243,7 +243,7 @@
 		$success_ids = array();
 		$failed_ids = array();
 		
-		$modified = microtime(1) / 86400 + 2440587.5;
+		$modified = microtime(1) * 1000;
 		foreach ($json as $wbo_data)
 		{
 			$wbo = new wbo();
