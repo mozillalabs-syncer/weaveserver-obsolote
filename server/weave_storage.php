@@ -223,7 +223,7 @@ class WeaveStorageMysql implements WeaveStorage
 		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
 		{
 			#better make sure we have a modified date. Should have been handled earlier
-			if (!wbo->modfied_exists())
+			if (!$wbo->modified_exists())
 			{
 				error_log("Called update_object with no defined timestamp. Please check");
 				$wbo->modified(microtime(1) * 1000);
@@ -541,7 +541,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
 		{
 			#better make sure we have a modified date. Should have been handled earlier
-			if (!wbo->modfied_exists())
+			if (!$wbo->modified_exists())
 			{
 				error_log("Called update_object with no defined timestamp. Please check");
 				$wbo->modified(microtime(1) * 1000);
