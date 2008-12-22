@@ -97,19 +97,19 @@ class wbo
 
 	function id($id = null)
 	{
-		if ($id) { $this->wbo_hash['id'] = $id; }
+		if ($id != null) { $this->wbo_hash['id'] = $id; }
 		return array_key_exists('id', $this->wbo_hash) ?  $this->wbo_hash['id'] : null;
 	}
 	
 	function collection($collection = null)
 	{
-		if ($collection){ $this->_collection = $collection; }
+		if ($collection != null){ $this->_collection = $collection; }
 		return $this->_collection;
 	}
 	
 	function parentid($parentid = null)
 	{
-		if ($parentid){ $this->wbo_hash['parentid'] = $parentid; }
+		if ($parentid != null){ $this->wbo_hash['parentid'] = $parentid; }
 		return array_key_exists('parentid', $this->wbo_hash) ?  $this->wbo_hash['parentid'] : null;
 	}
 	
@@ -120,13 +120,18 @@ class wbo
 	
 	function modified($modified = null)
 	{
-		if ($modified){ $this->wbo_hash['modified'] = $modified; }
+		if ($modified != null){ $this->wbo_hash['modified'] = (float)$modified; }
 		return array_key_exists('modified', $this->wbo_hash) ?  $this->wbo_hash['modified'] : null;
+	}
+	
+	function modified_exists()
+	{
+		return array_key_exists('modified', $this->wbo_hash);
 	}
 	
 	function payload($payload = null)
 	{
-		if ($payload){ $this->wbo_hash['payload'] = $payload; }
+		if ($payload != null){ $this->wbo_hash['payload'] = $payload; }
 		return array_key_exists('payload', $this->wbo_hash) ?  $this->wbo_hash['payload'] : null;
 	}
 	
@@ -137,7 +142,7 @@ class wbo
 	
 	function sortindex($index = null)
 	{
-		if ($index){ $this->wbo_hash['sortindex'] = $index; }
+		if ($index != null){ $this->wbo_hash['sortindex'] = (int)$index; }
 		return array_key_exists('sortindex', $this->wbo_hash) ?  $this->wbo_hash['sortindex'] : null;
 	}
 
@@ -149,7 +154,7 @@ class wbo
 	
 	function depth($depth = null)
 	{
-		if ($depth){ $this->wbo_hash['depth'] = $depth; }
+		if ($depth != null){ $this->wbo_hash['depth'] = (int)$depth; }
 		return array_key_exists('depth', $this->wbo_hash) ?  $this->wbo_hash['depth'] : null;
 	}
 
@@ -165,7 +170,7 @@ class wbo
 		if (!$this->id() || strlen($this->id()) > 64)
 		{ $this->_error[] = "invalid id"; }
 
-		if ($this->parentid() && strlen($this->parentid()) > 64)
+		if ($this->parentid_exists() && strlen($this->parentid()) > 64)
 		{ $this->_error[] = "invalid parentid"; }
 
 		if (!is_numeric($this->modified()))
@@ -177,16 +182,19 @@ class wbo
 		if (!$this->_collection || strlen($this->_collection) > 64)
 		{ $this->_error[] = "invalid collection"; }
 		
-		if ($this->depth() && !is_integer($this->depth()))
+		if ($this->depth_exists() && !is_numeric($this->depth()))
 		{ $this->_error[] = "invalid depth"; }
 		
-		if ($this->sortindex() && !is_integer($this->sortindex()))
+		if ($this->sortindex_exists() && !is_numeric($this->sortindex()))
 		{ $this->_error[] = "invalid sortindex"; }
 		
-		if ($this->payload_exists() && !is_string($this->wbo_hash['payload']))
-		{ $this->_error[] = "payload needs to be json-encoded"; }
-		else if (WEAVE_PAYLOAD_MAX_SIZE && strlen($this->wbo_hash['payload']) > WEAVE_PAYLOAD_MAX_SIZE)
-		{ $this->_error[] = "payload too large"; }
+		if ($this->payload_exists())
+		{
+			if (!is_string($this->wbo_hash['payload']))
+			{ $this->_error[] = "payload needs to be json-encoded"; }
+			else if (WEAVE_PAYLOAD_MAX_SIZE && strlen($this->wbo_hash['payload']) > WEAVE_PAYLOAD_MAX_SIZE)
+			{ $this->_error[] = "payload too large"; }
+		}
 		
 		return !$this->get_error();
 	}

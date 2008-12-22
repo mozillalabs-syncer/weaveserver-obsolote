@@ -214,7 +214,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode((string)$wbo->modified());
+			echo json_encode($wbo->modified());
 		}
 		else
 		{
@@ -281,7 +281,7 @@
 				$failed_ids[$wbo->id()] = $wbo->get_error();
 			}
 		}
-		echo json_encode(array('modified' => (string)$modified, 'success' => $success_ids, 'failed' => $failed_ids));
+		echo json_encode(array('modified' => $modified, 'success' => $success_ids, 'failed' => $failed_ids));
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 	{

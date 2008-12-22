@@ -140,14 +140,13 @@ print "replace: " . $ua->request($req)->content() . "\n";
 
 #do a partial replace
 
-my $json = '{"id": "3","depth":2}';
+my $json = '{"id": "3","depth":"2"}';
 my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
 
 print "replace: " . $ua->request($req)->content() . "\n";
-
 
 #do a bad put (no id)
 

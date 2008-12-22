@@ -746,7 +746,7 @@ create table wbo
  id text,
  collection text,
  parentid text,
- modified real,
+ modified int,
  sortindex int,
  depth int,
  payload text,
