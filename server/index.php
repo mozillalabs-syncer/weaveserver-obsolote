@@ -22,6 +22,7 @@
 #
 # Contributor(s):
 #	Toby Elliott (telliott@mozilla.com)
+#   Luca Tettamanti
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -71,6 +72,41 @@
 	
 	$auth_user = array_key_exists('PHP_AUTH_USER', $_SERVER) ? $_SERVER['PHP_AUTH_USER'] : null;
 	$auth_pw = array_key_exists('PHP_AUTH_PW', $_SERVER) ? $_SERVER['PHP_AUTH_PW'] : null;
+
+	if (is_null($auth_user) || is_null($auth_pw)) 
+	{
+		/* CGI/FCGI auth workarounds */
+		$auth_str = null;
+		if (array_key_exists('Authorization', $_SERVER))
+			/* Standard fastcgi configuration */
+			$auth_str = $_SERVER['Authorization'];
+		else if (array_key_exists('AUTHORIZATION', $_SERVER))
+			/* Alternate fastcgi configuration */
+			$auth_str = $_SERVER['AUTHORIZATION'];
+		else if (array_key_exists('HTTP_AUTHORIZATION', $_SERVER))
+			/* IIS/ISAPI and newer (yet to be released) fastcgi */
+			$auth_str = $_SERVER['HTTP_AUTHORIZATION'];
+		else if (array_key_exists('REDIRECT_HTTP_AUTHORIZATION', $_SERVER))
+			/* mod_rewrite - per-directory internal redirect */
+			$auth_str = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+		if (!is_null($auth_str)) 
+		{
+			/* Basic base64 auth string */
+			if (preg_match('/Basic\s+(.*)$/', $auth_str)) 
+			{
+				$auth_str = substr($auth_str, 6);
+				$auth_str = base64_decode($auth_str, true);
+				if ($auth_str != FALSE) {
+					$tmp = explode(':', $auth_str);
+					if (count($tmp) == 2) 
+					{
+						$auth_user = $tmp[0];
+						$auth_pw = $tmp[1];
+					}
+				}
+			}
+		}
+	}
 
 	#Basic path validation. No point in going on if these are missing
 	if (!$username)
