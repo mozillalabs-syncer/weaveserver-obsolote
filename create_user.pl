@@ -22,6 +22,7 @@
 #
 # Contributor(s):
 #	Toby Elliott (telliott@mozilla.com)
+#	Markus Doits (markus.doits@gmail.com)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -45,27 +46,65 @@ use HTTP::Request::Common qw/PUT GET POST/;
 my $PROTOCOL = 'http';
 my $SERVER = 'localhost';
 my $ADMIN_SECRET = 'bad secret';
-my $PREFIX = 'weave/0.3';
 my $ADMIN_PREFIX = 'weave/admin';
+my $HTTP_USERNAME = '';
+my $HTTP_PASSWORD = '';
+
+# check whether username/password for authentication was provided
+my $SERVERLOGIN;
+if( $HTTP_USERNAME && $HTTP_PASSWORD ) {
+  $SERVERLOGIN = $HTTP_USERNAME.':'.$HTTP_PASSWORD.'@';
+}
+else {
+  $SERVERLOGIN = '';
+}
 
 my $ua = LWP::UserAgent->new;
 $ua->agent("Weave Server Test/0.3");
 my $req;
 
-print "Username: ";
-my $username = <STDIN>;
-chomp $username;
+print "What do you want to do?\nc: create a user\nd: delete a user\nType 'c' or 'd': ";
+my $command = <STDIN>;
+chomp $command;
 
-print "Password: ";
-my $password = <STDIN>;
-chomp $password;
+if( $command eq "c" ) {
 
-print "Secret: ";
-my $secret = <STDIN>;
-chomp $secret;
-$ADMIN_SECRET = $secret if $secret;
+  print "Username: ";
+  my $username = <STDIN>;
+  chomp $username;
 
-#create the user
-$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $username, 'pass' => $password, 'secret' => $ADMIN_SECRET];
-$req->content_type('application/x-www-form-urlencoded');
-print "create user: " . $ua->request($req)->content() . "\n";
+  print "Password: ";
+  my $password = <STDIN>;
+  chomp $password;
+
+  print "Secret: ";
+  my $secret = <STDIN>;
+  chomp $secret;
+  $ADMIN_SECRET = $secret if $secret;
+
+  #create the user
+  $req = POST "$PROTOCOL://$SERVERLOGIN$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $username, 'pass' => $password, 'secret' => $ADMIN_SECRET];
+  $req->content_type('application/x-www-form-urlencoded');
+  print "create user: " . $ua->request($req)->content() . "\n";
+
+} elsif( $command eq "d" ) {
+
+  print "Username: ";
+  my $username = <STDIN>;
+  chomp $username;
+
+  print "Secret: ";
+  my $secret = <STDIN>;
+  chomp $secret;
+  $ADMIN_SECRET = $secret if $secret;
+
+  #delete the user
+  $req = POST "$PROTOCOL://$SERVERLOGIN$SERVER/$ADMIN_PREFIX", ['function' => 'delete', 'user' => $username, 'secret' => $ADMIN_SECRET];
+  $req->content_type('application/x-www-form-urlencoded');
+  print "delete user: " . $ua->request($req)->content() . "\n";
+
+} else {
+
+  print "Invalid command\n";
+
+}
