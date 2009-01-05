@@ -481,15 +481,18 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'replace into wbo (id, collection, parentid, modified, payload) 
-					values (:id, :collection, :parentid, :modified, :payload)';
+			$insert_stmt = 'replace into wbo (id, collection, parentid, depth, sortindex, modified, payload) 
+					values (:id, :collection, :parentid, :depth, :sortindex, :modified, :payload)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':id', $wbo->id());
 			$sth->bindParam(':collection', $wbo->collection());
 			$sth->bindParam(':parentid', $wbo->parentid());
+			$sth->bindParam(':depth', $wbo->depth());
+			$sth->bindParam(':sortindex', $wbo->sortindex());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':payload', $wbo->payload());
 			$sth->execute();
+
 		}
 		catch( PDOException $exception )
 		{
