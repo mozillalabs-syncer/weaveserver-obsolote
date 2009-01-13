@@ -52,6 +52,8 @@ my $PREFIX = 'weave/0.3';
 my $ADMIN_PREFIX = 'weave/admin';
 
 my $DO_ADMIN_TESTS = 1;
+my $DELETE_USER = 1;
+my $USE_RANDOM_USERNAME = 0;
 
 my $ua = LWP::UserAgent->new;
 $ua->agent("Weave Server Test/0.3");
@@ -59,6 +61,19 @@ my $req;
 
 if ($DO_ADMIN_TESTS)
 {
+
+	if ($USE_RANDOM_USERNAME)
+	{
+		my $length = rand(10) + 6;
+		$USERNAME = '';
+		for (1..$length)
+		{
+			my $number = int(rand(36)) + 48;
+			$number += 7 if $number > 57;
+			$USERNAME .= chr($number);
+		}
+	}
+	
 	#create the user
 	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
 	$req->content_type('application/x-www-form-urlencoded');
@@ -265,12 +280,15 @@ $req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "parentid and modified (full records): " . $ua->request($req)->content() . "\n";
 
-#clear the user again
-my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "clear: " . $ua->request($req)->content() . "\n";
+if ($DELETE_USER)
+{
+	#clear the user again
+	my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	print "clear: " . $ua->request($req)->content() . "\n";
+}
 
-if ($DO_ADMIN_TESTS)
+if ($DO_ADMIN_TESTS && $DELETE_USER)
 {
 	#delete the user
 	my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'delete', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];

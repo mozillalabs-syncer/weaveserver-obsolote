@@ -197,8 +197,14 @@
 				#better to structure the output directly rather than push the json conversion down
 				#into the retrieval object, in case there's some interim manipulation to be done.
 				
+				#can't do a join or anything cool here, because there's the potential for huge objects
 				echo '[';
-				echo join(array_map("jsonize",$ids),', ');
+				$comma_flag = 0;
+				foreach ($ids as $wbo)
+				{
+					if ($comma_flag) { echo ','; } else { $comma_flag = 1; }
+					echo $wbo->json();
+				}
 				echo ']';
 			}
 			else

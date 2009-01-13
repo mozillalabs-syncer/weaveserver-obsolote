@@ -101,10 +101,10 @@ interface WeaveStorage
 
 #create table wbo
 #(
-# username varchar(32),
-# collection varchar(64),
-# id varchar(64),
-# parentid varchar(64),
+# username varbinary(32),
+# collection varbinary(64),
+# id varbinary(64),
+# parentid varbinary(64),
 # sortindex int default null,
 # depth tinyint default null, 
 # modified bigint,

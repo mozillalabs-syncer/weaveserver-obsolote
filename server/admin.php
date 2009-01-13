@@ -67,6 +67,7 @@
 
 	$username = array_key_exists('user', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['user']) : $_POST['user']) : null;
 	$password = array_key_exists('pass', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['pass']) : $_POST['pass']) : null;
+	$email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
 
 
 	try
@@ -91,7 +92,7 @@
 					report_problem("User already exists", 400);
 				}
 				$storagedb->create_user($username, $password);
-				$authdb->create_user($username, $password);
+				$authdb->create_user($username, $password, email);
 				break;
 			case 'update':
 				$authdb->update_password($username, $password);
