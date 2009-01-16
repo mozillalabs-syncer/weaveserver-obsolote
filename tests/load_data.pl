@@ -280,6 +280,18 @@ $req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454
 $req->authorization_basic($USERNAME, $PASSWORD);
 print "parentid and modified (full records): " . $ua->request($req)->content() . "\n";
 
+#delete the first two with $parentid = 1
+$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test?parentid=1&limit=2");
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "delete 2 items: " . $ua->request($req)->content() . "\n";
+
+# should return about one-third the ids, less the two we deleted
+$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1";
+$req->authorization_basic($USERNAME, $PASSWORD);
+print "parent ids (mod 3 = 1): " . $ua->request($req)->content() . "\n";
+
+
+
 if ($DELETE_USER)
 {
 	#clear the user again

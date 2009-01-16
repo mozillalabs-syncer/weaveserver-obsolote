@@ -81,11 +81,11 @@ interface WeaveStorage
 	
 	function delete_object($collection, $id);
 	
-	function delete_collection($collection);
+	function delete_objects($collection, $id = null, $parentid = null, $modified = null, $limit = null, $offset = null);
 	
 	function retrieve_object($collection, $id);
 	
-	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null);
+	function retrieve_objects($collection, $id = null, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null);
 
 	function create_user();
 
@@ -276,24 +276,72 @@ class WeaveStorageMysql implements WeaveStorage
 		return 1;
 	}
 	
-	function delete_collection($collection)
+	function delete_objects($collection, $id = null, $parentid = null, $modified = null, 
+								$sort = null, $limit = null, $offset = null)
 	{
+		
+		$select_stmt = "delete from wbo where username = ? and collection = ?";
+		$params[] = $this->_username;
+		$params[] = $collection;
+		
+		
+		if ($id)
+		{
+			$select_stmt .= " and id = ?";
+			$params[] = $id;
+		}
+		
+		if ($parentid)
+		{
+			$select_stmt .= " and parentid = ?";
+			$params[] = $parentid;
+		}
+		
+		if ($modified)
+		{
+			$select_stmt .= " and modified > ?";
+			$params[] = $modified;
+		}
+	
+		if ($sort == 'index')
+		{
+			$select_stmt .= " order by sortindex";
+		}
+		else if ($sort == 'newest')
+		{
+			$select_stmt .= " order by modified desc";
+		}
+		else if ($sort == 'oldest')
+		{
+			$select_stmt .= " order by modified";
+		}
+		else if ($sort == 'depthindex')
+		{
+			$select_stmt .= " order by depth,sortindex";
+		}
+		
+		if ($limit)
+		{
+			$select_stmt .= " limit " . intval($limit);
+			if ($offset)
+			{
+				$select_stmt .= " offset " . intval($offset);
+			}
+		}
+
 		try
 		{
-			$delete_stmt = 'delete from wbo where username = :username and collection = :collection';
-			$sth = $this->_dbh->prepare($delete_stmt);
-			$sth->bindParam(':username', $this->_username);
-			$sth->bindParam(':collection', $collection);
-			$sth->execute();
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->execute($params);
 		}
 		catch( PDOException $exception )
 		{
-			error_log("delete_collection: " . $exception->getMessage());
+			error_log("delete_objects: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
 		return 1;
 	}
-	
+
 	function retrieve_object($collection, $id)
 	{
 		try
@@ -318,7 +366,7 @@ class WeaveStorageMysql implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, 
+	function retrieve_objects($collection, $id = null, $full = null, $parentid = null, $modified = null, 
 								$sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
@@ -365,12 +413,10 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		if ($limit)
 		{
-			$select_stmt .= " limit ?";
-			$params[] = $limit;
+			$select_stmt .= " limit " . intval($limit);
 			if ($offset)
 			{
-				$select_stmt .= " offset ?";
-				$params[] = $offset;
+				$select_stmt .= " offset " . intval($offset);
 			}
 		}
 		
@@ -597,18 +643,66 @@ class WeaveStorageSqlite implements WeaveStorage
 		return 1;
 	}
 	
-	function delete_collection($collection)
+	function delete_objects($collection, $id = null, $parentid = null, $modified = null, 
+								$sort = null, $limit = null, $offset = null)
 	{
+		
+		$select_stmt = "delete from wbo where collection = ?";
+		$params[] = $collection;
+		
+		
+		if ($id)
+		{
+			$select_stmt .= " and id = ?";
+			$params[] = $id;
+		}
+		
+		if ($parentid)
+		{
+			$select_stmt .= " and parentid = ?";
+			$params[] = $parentid;
+		}
+		
+		if ($modified)
+		{
+			$select_stmt .= " and modified > ?";
+			$params[] = $modified;
+		}
+	
+		if ($sort == 'index')
+		{
+			$select_stmt .= " order by sortindex";
+		}
+		else if ($sort == 'newest')
+		{
+			$select_stmt .= " order by modified desc";
+		}
+		else if ($sort == 'oldest')
+		{
+			$select_stmt .= " order by modified";
+		}
+		else if ($sort == 'depthindex')
+		{
+			$select_stmt .= " order by depth,sortindex";
+		}
+		
+		if ($limit)
+		{
+			$select_stmt .= " limit " . intval($limit);
+			if ($offset)
+			{
+				$select_stmt .= " offset " . intval($offset);
+			}
+		}
+
 		try
 		{
-			$delete_stmt = 'delete from wbo where collection = :collection';
-			$sth = $this->_dbh->prepare($delete_stmt);
-			$sth->bindParam(':collection', $collection);
-			$sth->execute();
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->execute($params);
 		}
 		catch( PDOException $exception )
 		{
-			error_log("delete_collection: " . $exception->getMessage());
+			error_log("delete_objects: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
 		return 1;
@@ -637,7 +731,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id, $full = null, $parentid = null, $modified = null, $sort = null, $limit = null, $offset = null)
+	function retrieve_objects($collection, $id = null, $full = null, $parentid = null, $modified = null, $sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
 			
@@ -683,12 +777,10 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 		if ($limit)
 		{
-			$select_stmt .= " limit ?";
-			$params[] = $limit;
+			$select_stmt .= " limit " . intval($limit);
 			if ($offset)
 			{
-				$select_stmt .= " offset ?";
-				$params[] = $offset;
+				$select_stmt .= " offset " . intval($offset);
 			}
 		}
 		

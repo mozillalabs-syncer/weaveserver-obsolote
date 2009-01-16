@@ -349,7 +349,12 @@
 		{
 			try
 			{
-				$db->delete_collection($collection);
+				$db->delete_objects($collection, null,  
+							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
+							array_key_exists('modified', $_GET) ? $_GET['modified'] : null, 
+							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
+							array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
+							array_key_exists('offset', $_GET) ? $_GET['offset'] : null);			
 			}
 			catch(Exception $e)
 			{
