@@ -120,7 +120,7 @@ class wbo
 	
 	function modified($modified = null)
 	{
-		if (!is_null($modified)){ $this->wbo_hash['modified'] = (float)$modified; }
+		if (!is_null($modified)){ $this->wbo_hash['modified'] = sprintf ( "%.0f", $modified ); }
 		return array_key_exists('modified', $this->wbo_hash) ?  $this->wbo_hash['modified'] : null;
 	}
 	
