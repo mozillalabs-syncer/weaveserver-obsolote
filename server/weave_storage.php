@@ -85,7 +85,7 @@ interface WeaveStorage
 	
 	function retrieve_object($collection, $id);
 	
-	function retrieve_objects($collection, $id = null, $full = null, $parentid = null, $modified = null, $limit = null, $offset = null);
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $modified = null, $limit = null, $offset = null);
 
 	function create_user();
 
@@ -367,7 +367,7 @@ class WeaveStorageMysql implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id = null, $full = null, $parentid = null, $modified = null, 
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $modified = null, 
 								$sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
@@ -433,19 +433,52 @@ class WeaveStorageMysql implements WeaveStorage
 		}
 
 		$ids = array();
+		
+		if ($direct_output)
+		{
+			echo '[';
+			$comma_flag = 0;	
+		}
+
 		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
 		{
+			if ($direct_output)
+			{
+				if ($comma_flag) { echo ','; } else { $comma_flag = 1; }
+			}
+			
 			if ($full)
 			{
 				$wbo = new wbo();
 				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
-				$ids[] = $wbo;
+				if ($direct_output)
+				{
+					echo $wbo->json();
+				}
+				else
+				{
+					$ids[] = $wbo;
+				}
 			}
 			else
 			{
-				$ids[] = $result{'id'};
+				if ($direct_output)
+				{
+					echo json_encode($result{'id'});
+				}
+				else
+				{
+					$ids[] = $result{'id'};
+				}
 			}
 		}
+
+		if ($direct_output)
+		{
+			echo ']';
+			return 1;
+		}
+		
 		return $ids;
 	}
 
@@ -655,7 +688,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			#sqlite can't do sort or limit deletes without special compiled versions
 			#so, we need to grab the set, then delete it manually.
 		
-			$params = $this->retrieve_objects($collection, $id, 0, $parentid, $modified, $sort, $limit, $offset);
+			$params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $modified, $sort, $limit, $offset);
 			if (!count($params))
 			{
 				return 1; #nothing to delete
@@ -752,7 +785,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id = null, $full = null, $parentid = null, $modified = null, $sort = null, $limit = null, $offset = null)
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $modified = null, $sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
 			
@@ -817,23 +850,53 @@ class WeaveStorageSqlite implements WeaveStorage
 		}
 
 		$ids = array();
+
+		if ($direct_output)
+		{
+			echo '[';
+			$comma_flag = 0;	
+		}
+
 		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
 		{
+			if ($direct_output)
+			{
+				if ($comma_flag) { echo ','; } else { $comma_flag = 1; }
+			}
+			
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, 
-							$result{'modified'}, $result{'depth'}, $result{'sortindex'}, 
-							$result{'payload'});
-				$ids[] = $wbo;
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				if ($direct_output)
+				{
+					echo $wbo->json();
+				}
+				else
+				{
+					$ids[] = $wbo;
+				}
 			}
 			else
 			{
-				$ids[] = $result{'id'};
+				if ($direct_output)
+				{
+					echo json_encode($result{'id'});
+				}
+				else
+				{
+					$ids[] = $result{'id'};
+				}
 			}
 		}
+
+		if ($direct_output)
+		{
+			echo ']';
+			return 1;
+		}
+		
 		return $ids;
-	
 	}
 
 

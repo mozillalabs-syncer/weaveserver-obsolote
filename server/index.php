@@ -175,12 +175,12 @@
 				report_problem("record not found", 404);
 			}
 		}
-		else #retrieve a batch of records
+		else #retrieve a batch of records. Sadly, due to potential record sizes, have the storage object stream the output...
 		{
 			$full = array_key_exists('full', $_GET) ? $_GET['full'] : null;
 			try 
 			{
-				$ids = $db->retrieve_objects($collection, null, $full, 
+				$ids = $db->retrieve_objects($collection, null, $full, 1,
 							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
 							array_key_exists('modified', $_GET) ? $_GET['modified'] : null, 
 							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
@@ -190,28 +190,7 @@
 			catch(Exception $e)
 			{
 				report_problem($e->getMessage(), $e->getCode());
-			}
-			
-			if ($full)
-			{
-				#better to structure the output directly rather than push the json conversion down
-				#into the retrieval object, in case there's some interim manipulation to be done.
-				
-				#can't do a join or anything cool here, because there's the potential for huge objects
-				echo '[';
-				$comma_flag = 0;
-				foreach ($ids as $wbo)
-				{
-					if ($comma_flag) { echo ','; } else { $comma_flag = 1; }
-					echo $wbo->json();
-				}
-				echo ']';
-			}
-			else
-			{
-				echo json_encode($ids);		
-			}
-		
+			}		
 		}
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #add a single record to the server
