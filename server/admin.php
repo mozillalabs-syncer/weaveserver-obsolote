@@ -92,7 +92,7 @@
 					report_problem("User already exists", 400);
 				}
 				$storagedb->create_user($username, $password);
-				$authdb->create_user($username, $password, email);
+				$authdb->create_user($username, $password, $email);
 				break;
 			case 'update':
 				$authdb->update_password($username, $password);

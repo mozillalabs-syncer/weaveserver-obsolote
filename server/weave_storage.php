@@ -279,6 +279,7 @@ class WeaveStorageMysql implements WeaveStorage
 	function delete_objects($collection, $id = null, $parentid = null, $modified = null, 
 								$sort = null, $limit = null, $offset = null)
 	{
+		$params = array();
 		
 		$select_stmt = "delete from wbo where username = ? and collection = ?";
 		$params[] = $this->_username;
@@ -646,55 +647,75 @@ class WeaveStorageSqlite implements WeaveStorage
 	function delete_objects($collection, $id = null, $parentid = null, $modified = null, 
 								$sort = null, $limit = null, $offset = null)
 	{
+		$params = array();
+		$select_stmt = '';
 		
-		$select_stmt = "delete from wbo where collection = ?";
-		$params[] = $collection;
+		if ($limit || $offset || $sort)
+		{
+			#sqlite can't do sort or limit deletes without special compiled versions
+			#so, we need to grab the set, then delete it manually.
 		
-		
-		if ($id)
-		{
-			$select_stmt .= " and id = ?";
-			$params[] = $id;
-		}
-		
-		if ($parentid)
-		{
-			$select_stmt .= " and parentid = ?";
-			$params[] = $parentid;
-		}
-		
-		if ($modified)
-		{
-			$select_stmt .= " and modified > ?";
-			$params[] = $modified;
-		}
-	
-		if ($sort == 'index')
-		{
-			$select_stmt .= " order by sortindex";
-		}
-		else if ($sort == 'newest')
-		{
-			$select_stmt .= " order by modified desc";
-		}
-		else if ($sort == 'oldest')
-		{
-			$select_stmt .= " order by modified";
-		}
-		else if ($sort == 'depthindex')
-		{
-			$select_stmt .= " order by depth,sortindex";
-		}
-		
-		if ($limit)
-		{
-			$select_stmt .= " limit " . intval($limit);
-			if ($offset)
+			$params = $this->retrieve_objects($collection, $id, 0, $parentid, $modified, $sort, $limit, $offset);
+			if (!count($params))
 			{
-				$select_stmt .= " offset " . intval($offset);
+				return 1; #nothing to delete
+			}
+			$paramqs = array();
+			$select_stmt = "delete from wbo where collection = ? and id in (" . join(", ", array_pad($paramqs, count($params), '?')) . ")";
+			array_unshift($params, $collection);
+		}
+		else
+		{
+		
+			$select_stmt = "delete from wbo where collection = ?";
+			$params[] = $collection;
+			
+			
+			if ($id)
+			{
+				$select_stmt .= " and id = ?";
+				$params[] = $id;
+			}
+			
+			if ($parentid)
+			{
+				$select_stmt .= " and parentid = ?";
+				$params[] = $parentid;
+			}
+			
+			if ($modified)
+			{
+				$select_stmt .= " and modified > ?";
+				$params[] = $modified;
+			}
+		
+			if ($sort == 'index')
+			{
+				$select_stmt .= " order by sortindex";
+			}
+			else if ($sort == 'newest')
+			{
+				$select_stmt .= " order by modified desc";
+			}
+			else if ($sort == 'oldest')
+			{
+				$select_stmt .= " order by modified";
+			}
+			else if ($sort == 'depthindex')
+			{
+				$select_stmt .= " order by depth,sortindex";
+			}
+		
+			if ($limit)
+			{
+				$select_stmt .= " limit " . intval($limit);
+				if ($offset)
+				{
+					$select_stmt .= " offset " . intval($offset);
+				}
 			}
 		}
-
+		
 		try
 		{
 			$sth = $this->_dbh->prepare($select_stmt);
