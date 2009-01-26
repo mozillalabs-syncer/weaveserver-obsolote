@@ -48,6 +48,8 @@ function get_auth_object()
 			return new WeaveAuthenticationMysql();
 		case 'sqlite':
 			return new WeaveAuthenticationSqlite();
+		case 'ldap':
+			return new WeaveAuthenticationLDAP();
 		case 'htaccess':
 		case 'none':
 		case '':

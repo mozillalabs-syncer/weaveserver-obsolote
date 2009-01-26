@@ -47,14 +47,9 @@ require_once 'weave_constants.php';
 #dbh: an already existing database handle to use. If a non-object, will not create
 #a db connection (must be done explicitly)
 
-function get_storage_object($username, $type = null, $dbh = null)
+function get_storage_object($username, $dbh = null)
 {
-	if (!$type)
-	{
-		$type = WEAVE_STORAGE_ENGINE;
-	}
-	
-	switch($type)
+	switch(WEAVE_STORAGE_ENGINE)
 	{
 		case 'mysql':
 			return new WeaveStorageMysql($username, $dbh);
@@ -76,6 +71,8 @@ interface WeaveStorage
 	function open_connection();
 
 	function get_connection();
+	
+	function get_max_timestamp($collection);
 	
 	function store_object(&$wbo);
 	
@@ -152,6 +149,31 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		return $this->_dbh;
 	}
+
+	function get_max_timestamp($collection)
+	{
+		if (!$collection)
+		{
+			return 0;
+		}
+		
+		try
+		{
+			$select_stmt = 'select max(modified) from wbo where username = :username and collection = :collection';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->bindParam(':collection', $collection);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_max_timestamp: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		
+		$result = $sth->fetchColumn();
+		return round((float)$result, 2);		
+	}
 	
 	function store_object(&$wbo) 
 	{
@@ -226,7 +248,7 @@ class WeaveStorageMysql implements WeaveStorage
 			if (!$wbo->modified_exists())
 			{
 				error_log("Called update_object with no defined timestamp. Please check");
-				$wbo->modified(microtime(1) * 1000);
+				$wbo->modified(microtime(1));
 			}
 			$update_list[] = "modified = ?";
 			$params[] = $wbo->modified();
@@ -556,6 +578,30 @@ class WeaveStorageSqlite implements WeaveStorage
 		return $this->_dbh;
 	}
 		
+	function get_max_timestamp($collection)
+	{
+		if (!$collection)
+		{
+			return 0;
+		}
+		
+		try
+		{
+			$select_stmt = 'select max(modified) from wbo where collection = :collection';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':collection', $collection);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_max_timestamp: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		
+		$result = $sth->fetchColumn();
+		return round((float)$result, 2);		
+	}
+
 	function store_object(&$wbo)
 	{
 		
@@ -627,7 +673,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			if (!$wbo->modified_exists())
 			{
 				error_log("Called update_object with no defined timestamp. Please check");
-				$wbo->modified(microtime(1) * 1000);
+				$wbo->modified(microtime(1));
 			}
 			$update_list[] = " modified = ?";
 			$params[] = $wbo->modified();
@@ -925,7 +971,7 @@ create table wbo
  id text,
  collection text,
  parentid text,
- modified int,
+ modified real,
  sortindex int,
  depth int,
  payload text,

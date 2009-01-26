@@ -51,6 +51,7 @@
 		$headers = array('400' => '400 Bad Request',
 					'401' => '401 Unauthorized',
 					'404' => '404 Not Found',
+					'412' => '412 Precondition Failed',
 					'503' => '503 Service Unavailable');
 		header('HTTP/1.1 ' . $headers{$code},true,$code);
 		
@@ -138,7 +139,7 @@
 	#user passes, onto actually getting the data
 	try
 	{
-		$db = get_storage_object($username, null, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+		$db = get_storage_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
 	}
 	catch(Exception $e)
 	{
@@ -211,11 +212,20 @@
 			report_problem("6", 400);
 		}
 		
+		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER))
+		{
+			$last_update = $db->get_max_timestamp($collection);
+			if ($last_update > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+			{
+				report_problem("4", 412);	
+			}
+		}
+		
 		#use the url if the json object doesn't have an id
 		if (!$wbo->id() && $id) { $wbo->id($id); }
 		
 		$wbo->collection($collection);
-		$wbo->modified(microtime(1) * 1000); #current microtime
+		$wbo->modified(microtime(1)); #current microtime
 
 		if ($wbo->validate())
 		{
@@ -260,11 +270,21 @@
 		{
 			report_problem("6", 400);
 		}
+
+		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER))
+		{
+			$last_update = $db->get_max_timestamp($collection);
+			if ($last_update > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+			{
+				report_problem("4", 412);	
+			}
+		}
+		
 		
 		$success_ids = array();
 		$failed_ids = array();
 		
-		$modified = microtime(1) * 1000;
+		$modified = microtime(1);
 		foreach ($json as $wbo_data)
 		{
 			$wbo = new wbo();
@@ -302,7 +322,7 @@
 				$failed_ids[$wbo->id()] = $wbo->get_error();
 			}
 		}
-		echo json_encode(array('modified' => $modified, 'success' => $success_ids, 'failed' => $failed_ids));
+		echo json_encode(array('modified' => round($modified, 2), 'success' => $success_ids, 'failed' => $failed_ids));
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 	{

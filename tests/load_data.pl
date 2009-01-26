@@ -41,6 +41,7 @@ use strict;
 use LWP;
 use HTTP::Request;
 use HTTP::Request::Common qw/PUT GET POST/;
+use Data::Dumper;
 
 
 my $PROTOCOL = 'http';
@@ -161,7 +162,20 @@ $req->authorization_basic($USERNAME, $PASSWORD);
 $req->content($json);
 $req->content_type('application/x-www-form-urlencoded');
 
-print "replace: " . $ua->request($req)->content() . "\n";
+my $timestamp = $ua->request($req)->content();
+print "replace: " . $timestamp . "\n";
+
+#do a replace (timestamp too old)
+$timestamp = $timestamp - 0.1;
+my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id", "X-If-Unmodified-Since" => $timestamp;
+$req->authorization_basic($USERNAME, $PASSWORD);
+$req->content($json);
+$req->content_type('application/x-www-form-urlencoded');
+
+print "replace (older, should fail): " . $ua->request($req)->content() . "\n";
+
+
 
 #do a bad put (no id)
 

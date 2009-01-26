@@ -75,7 +75,7 @@
 		$authdb = get_auth_object();
 		
 		#can't initiate the storage object yet, since may not have created the user
-		$storagedb = get_storage_object($username, null, 1);
+		$storagedb = get_storage_object($username, 1);
 		
 		switch($_POST['function'])
 		{
