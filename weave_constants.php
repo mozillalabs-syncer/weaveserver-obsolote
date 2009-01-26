@@ -61,7 +61,7 @@ elseif (WEAVE_STORAGE_ENGINE == 'sqlite')
 
 
 #engine for auth
-#Acceptable values: mysql | sqlite | none
+#Acceptable values: mysql | sqlite | ldap | none
 if (!defined('WEAVE_AUTH_ENGINE')) { define('WEAVE_AUTH_ENGINE', 'mysql'); }
 
 if (WEAVE_AUTH_ENGINE == 'mysql')
@@ -76,6 +76,12 @@ elseif (WEAVE_AUTH_ENGINE == 'sqlite')
 {
 	#path to the sqlite db
 	if (!defined('WEAVE_SQLITE_AUTH_DIRECTORY')) { define('WEAVE_SQLITE_AUTH_DIRECTORY', '/Library/WebServer/dbs'); }
+}
+elseif (WEAVE_AUTH_ENGINE == 'ldap')
+{
+	if (!defined('WEAVE_LDAP_AUTH_HOST')) { define('WEAVE_LDAP_AUTH_HOST', 'localhost'); }
+	if (!defined('WEAVE_LDAP_AUTH_DN')) { define('WEAVE_LDAP_AUTH_DN', ''); }
+	if (!defined('WEAVE_LDAP_AUTH_USER_PARAM_NAME')) { define('WEAVE_LDAP_AUTH_USER_PARAM_NAME', 'uid'); }
 }
 
 #if you are using mysql for both auth and storage and they live in the same table, you may
