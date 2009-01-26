@@ -22,6 +22,7 @@
 #
 # Contributor(s):
 #	Toby Elliott (telliott@mozilla.com)
+#	Anant Narayanan (anant@kix.in)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -39,14 +40,9 @@
 	
 require_once 'weave_constants.php';
 
-function get_auth_object($type = null)
+function get_auth_object()
 {
-	if (!$type)
-	{
-		$type = WEAVE_AUTH_ENGINE;
-	}
-	
-	switch($type)
+	switch(WEAVE_AUTH_ENGINE)
 	{
 		case 'mysql':
 			return new WeaveAuthenticationMysql();
@@ -84,7 +80,6 @@ interface WeaveAuthentication
 	
 	function delete_user($username);
 }
-
 
 #Dummy object for no-auth and .htaccess setups
 class WeaveAuthenticationNone implements WeaveAuthentication
@@ -627,6 +622,82 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	}
 }
 
+# LDAP version of Authentication
+class WeaveAuthenticationLDAP implements WeaveAuthentication
+{
+	const WEAVE_LDAP_AUTH_DN = 'c=mpt,dc=mozilla';
+	const WEAVE_LDAP_AUTH_HOST = 'sm-proxy01';
+	const WEAVE_LDAP_AUTH_PARAM = 'uid';
 
+	var $_conn;
+	function __construct($conn = null)
+	{
+		if (!$conn)
+		{
+			$this->open_connection();
+		}
+		else
+		{
+			$this->_conn = $conn;
+		}
+	}
 
- ?>
+	function open_connection()
+	{
+		$this->_conn = ldap_connect(WEAVE_LDAP_AUTH_HOST);
+
+		if (!$this->_conn)
+			throw new Exception("Cannot contact LDAP server", 503);
+
+		return 1;
+	}
+
+	function get_connection()
+	{
+		return $this->_conn;
+	}
+  
+	function create_user($username, $password, $email = "")
+	{
+		return 1;
+	}
+	
+	function get_user_location($username)
+	{
+		return 0;
+	}
+
+	function update_password($username, $password)
+	{
+		return 1;
+	}
+
+	function update_email($username, $email = "")
+	{
+		return 1;
+	}
+	
+	function authenticate_user($user, $pass)
+	{
+		$userdn = WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$user";
+		if (WEAVE_LDAP_AUTH_DN)
+		{
+			$userdn .= ",".WEAVE_LDAP_AUTH_DN;
+		}
+		if (ldap_bind($this->_conn, $userdn, $pass))
+			return 1;
+		return 0;
+	}
+
+	function delete_user($username)
+	{
+		return 1;
+	}
+	
+	function user_exists($username)
+	{
+		return 0;
+	}
+}
+
+?>
