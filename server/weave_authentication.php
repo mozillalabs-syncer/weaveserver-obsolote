@@ -627,10 +627,6 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 # LDAP version of Authentication
 class WeaveAuthenticationLDAP implements WeaveAuthentication
 {
-	const WEAVE_LDAP_AUTH_DN = 'c=mpt,dc=mozilla';
-	const WEAVE_LDAP_AUTH_HOST = 'sm-proxy01';
-	const WEAVE_LDAP_AUTH_PARAM = 'uid';
-
 	var $_conn;
 	function __construct($conn = null)
 	{
