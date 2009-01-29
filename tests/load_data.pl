@@ -52,272 +52,307 @@ my $ADMIN_SECRET = 'bad secret';
 my $PREFIX = 'weave/0.3';
 my $ADMIN_PREFIX = 'weave/admin';
 
-my $DO_ADMIN_TESTS = 1;
-my $DELETE_USER = 1;
-my $USE_RANDOM_USERNAME = 0;
+my $VERBOSE = defined $ARGV[0] ? $ARGV[0] : 1;
+my $DO_ADMIN_TESTS = defined $ARGV[1] ? $ARGV[1] : 1;
+my $DELETE_USER = defined $ARGV[2] ? $ARGV[2] : 1;
+my $USE_RANDOM_USERNAME = defined $ARGV[3] ? $ARGV[3] : 1;
+my $LOOPS = $ARGV[4] || 1;
 
 my $ua = LWP::UserAgent->new;
 $ua->agent("Weave Server Test/0.3");
 my $req;
+my $result;
 
-if ($DO_ADMIN_TESTS)
+foreach (1..$LOOPS)
 {
-
-	if ($USE_RANDOM_USERNAME)
+	if ($DO_ADMIN_TESTS)
 	{
-		my $length = rand(10) + 6;
-		$USERNAME = '';
-		for (1..$length)
+	
+		if ($USE_RANDOM_USERNAME)
 		{
-			my $number = int(rand(36)) + 48;
-			$number += 7 if $number > 57;
-			$USERNAME .= chr($number);
+			my $length = rand(10) + 6;
+			$USERNAME = '';
+			for (1..$length)
+			{
+				my $number = int(rand(36)) + 48;
+				$number += 7 if $number > 57;
+				$USERNAME .= chr($number);
+			}
 		}
+		
+		#create the user
+		$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
+		$req->content_type('application/x-www-form-urlencoded');
+		$result = $ua->request($req)->content();
+		print "create user: $result\n" if $VERBOSE;
+	
+		#create the user again
+		$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
+		$req->content_type('application/x-www-form-urlencoded');
+		$result = $ua->request($req)->content();
+		print "create user again (should fail): $result\n" if $VERBOSE;
+	
+		#check user existence
+		$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'check', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];
+		$req->content_type('application/x-www-form-urlencoded');
+		$result = $ua->request($req)->content();
+		print "check user existence: $result\n" if $VERBOSE;
+		
+		#change the password
+		$PASSWORD .= '2';
+		my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
+		$req->content_type('application/x-www-form-urlencoded');
+		$result = $ua->request($req)->content();
+		print "change password: $result\n" if $VERBOSE;
+		
+		#change password (bad secret)
+		my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => 'wrong secret'];
+		$req->content_type('application/x-www-form-urlencoded');
+		$result = $ua->request($req)->content();
+		print "change password(bad secret): $result\n" if $VERBOSE;
+	}	
+	
+	#clear the user
+	$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "delete: $result\n" if $VERBOSE;
+	my $id = 0;
+	
+	#upload 10 items individually
+	print "Adding 10 records:\n" if $VERBOSE;
+	foreach (1..10)
+	{
+	
+		$id++;
+		my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","sortindex":' . $id. ',"depth":1,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$req->content($json);
+		$req->content_type('application/x-www-form-urlencoded');
+		$result = $ua->request($req)->content();
+		
+		print $id . ": $result\n" if $VERBOSE;
 	}
 	
-	#create the user
-	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
-	$req->content_type('application/x-www-form-urlencoded');
-	print "create user: " . $ua->request($req)->content() . "\n";
-
-	#create the user again
-	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
-	$req->content_type('application/x-www-form-urlencoded');
-	print "create user again (should fail): " . $ua->request($req)->content() . "\n";
-
-	#check user existence
-	$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'check', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];
-	$req->content_type('application/x-www-form-urlencoded');
-	print "check user existence: " . $ua->request($req)->content() . "\n";
+	#upload 10 items in batch
+	my $batch = "";
+	foreach (1..10)
+	{
 	
-	#change the password
-	$PASSWORD .= '2';
-	my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
-	$req->content_type('application/x-www-form-urlencoded');
-	print "change password: " . $ua->request($req)->content() . "\n";
+		$id++;
+		$batch .= ', {"id": "' . $id . '","parentid":"' . ($id%3). '","sortindex":' . $id. ',"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	}
 	
-	#change password (bad secret)
-	my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => 'wrong secret'];
+	$batch =~ s/^,/[/;
+	$batch .= "]";
+	
+	$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
+	$req->content($batch);
+	$req->authorization_basic($USERNAME, $PASSWORD);
 	$req->content_type('application/x-www-form-urlencoded');
-	print "change password(bad secret): " . $ua->request($req)->content() . "\n";
-}	
-
-#clear the user
-$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "delete: " . $ua->request($req)->content() . "\n";
-my $id = 0;
-
-#upload 10 items individually
-print "Adding 10 records:\n";
-foreach (1..10)
-{
-
-	$id++;
-	my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","sortindex":' . $id. ',"depth":1,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	$result = $ua->request($req)->content();
+	
+	print "batch upload: $result\n" if $VERBOSE;
+	
+	
+	
+	
+	#do a replace
+	my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$req->content($json);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	
+	print "replace: $result\n" if $VERBOSE;
+	
+	#do a partial replace
+	
+	my $json = '{"id": "3","depth":"2"}';
 	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 	$req->authorization_basic($USERNAME, $PASSWORD);
 	$req->content($json);
 	$req->content_type('application/x-www-form-urlencoded');
 	
-	print $id . ": " . $ua->request($req)->content() . "\n";
-}
-
-#upload 10 items in batch
-my $batch = "";
-foreach (1..10)
-{
-
-	$id++;
-	$batch .= ', {"id": "' . $id . '","parentid":"' . ($id%3). '","sortindex":' . $id. ',"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-}
-
-$batch =~ s/^,/[/;
-$batch .= "]";
-
-$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
-$req->content($batch);
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "batch upload: " . $ua->request($req)->content() . "\n";
-
-
-
-
-#do a replace
-my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "replace: " . $ua->request($req)->content() . "\n";
-
-#do a partial replace
-
-my $json = '{"id": "3","depth":"2"}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-my $timestamp = $ua->request($req)->content();
-print "replace: " . $timestamp . "\n";
-
-#do a replace (timestamp too old)
-$timestamp = $timestamp - 0.1;
-my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id", "X-If-Unmodified-Since" => $timestamp;
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "replace (older, should fail): " . $ua->request($req)->content() . "\n";
-
-
-
-#do a bad put (no id)
-
-my $json = '{"id": "","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "bad PUT (no id): " . $ua->request($req)->content() . "\n";
-
-
-#do a bad put (bad json)
-
-$json = '{"id": ","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "bad PUT (bad json): " . $ua->request($req)->content() . "\n";
-
-
-#do a bad put (no auth)
-
-$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "bad PUT (no auth): " . $ua->request($req)->content() . "\n";
-
-#do a bad put (wrong pw)
-
-$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
-$req->authorization_basic($USERNAME, 'badpassword');
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "bad PUT (wrong pw): " . $ua->request($req)->content() . "\n";
-
-#do a bad put (payload not json encoded)
-
-$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":["a", "b"]}';
-my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content($json);
-$req->content_type('application/x-www-form-urlencoded');
-
-print "bad PUT (payload not json-encoded): " . $ua->request($req)->content() . "\n";
-
-
-#bad post (bad json);
-$batch =~ s/\]$//;
-$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
-$req->content($batch);
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content_type('application/x-www-form-urlencoded');
-print "bad batch upload (bad json): " . $ua->request($req)->content() . "\n";
-
-
-#post with some bad records
-
-$batch .= "]";
-$batch =~ s/parentid":"2/parentid":"3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333/g;
-$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
-$req->content($batch);
-$req->authorization_basic($USERNAME, $PASSWORD);
-$req->content_type('application/x-www-form-urlencoded');
-print "mixed batch upload (bad parentids on some): " . $ua->request($req)->content() . "\n";
-
-
-# should return ["1", "2" .. "20"]
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "should return [\"1\", \"2\" .. \"20\"] (in some order): " . $ua->request($req)->content() . "\n";
-
-# should return ["1", "2" .. "20"]
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=index";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "should return [\"1\", \"2\" .. \"20\"] (in order): " . $ua->request($req)->content() . "\n";
-
-# should return ["1", "2" .. "20"]
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=depthindex";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "should return [\"1\", \"2\" .. \"20\"] (3 at end): " . $ua->request($req)->content() . "\n";
-
-# should return the user id record for #3 (check the depth)
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/3";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "should return record 3 (replaced depth): " . $ua->request($req)->content() . "\n";
-
-# should return the user id record for #4
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/4";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "should return record 4: " . $ua->request($req)->content() . "\n";
-
-# should return about half the ids
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?modified=2454755";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "modified after halftime: " . $ua->request($req)->content() . "\n";
-
-# should return about one-third the ids
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "parent ids (mod 3 = 1): " . $ua->request($req)->content() . "\n";
-
-# mix our params
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454755";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "parentid and modified: " . $ua->request($req)->content() . "\n";
-
-#as above, but full records
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454755&full=1";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "parentid and modified (full records): " . $ua->request($req)->content() . "\n";
-
-#delete the first two with $parentid = 1
-$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test?parentid=1&limit=2");
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "delete 2 items: " . $ua->request($req)->content() . "\n";
-
-# should return about one-third the ids, less the two we deleted
-$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1";
-$req->authorization_basic($USERNAME, $PASSWORD);
-print "parent ids (mod 3 = 1): " . $ua->request($req)->content() . "\n";
-
-
-
-if ($DELETE_USER)
-{
-	#clear the user again
-	my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
+	my $timestamp = $ua->request($req)->content();
+	print "replace: $timestamp\n" if $VERBOSE;
+	
+	#do a replace (timestamp too old)
+	$timestamp = $timestamp - 0.1;
+	my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id", "X-If-Unmodified-Since" => $timestamp;
 	$req->authorization_basic($USERNAME, $PASSWORD);
-	print "clear: " . $ua->request($req)->content() . "\n";
-}
-
-if ($DO_ADMIN_TESTS && $DELETE_USER)
-{
-	#delete the user
-	my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'delete', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];
+	$req->content($json);
 	$req->content_type('application/x-www-form-urlencoded');
-	print "delete user: " . $ua->request($req)->content() . "\n";
+	$result = $ua->request($req)->content();
+	
+	print "replace (older, should fail): $result\n" if $VERBOSE;
+	
+	
+	
+	#do a bad put (no id)
+	
+	my $json = '{"id": "","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$req->content($json);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	
+	print "bad PUT (no id): $result\n" if $VERBOSE;
+	
+	
+	#do a bad put (bad json)
+	
+	$json = '{"id": ","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$req->content($json);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	
+	print "bad PUT (bad json): $result\n" if $VERBOSE;
+	
+	
+	#do a bad put (no auth)
+	
+	$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
+	$req->content($json);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	
+	print "bad PUT (no auth): $result\n" if $VERBOSE;
+	
+	#do a bad put (wrong pw)
+	
+	$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":"a89sdmawo58aqlva.8vj2w9fmq2af8vamva98fgqamf"}';
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
+	$req->authorization_basic($USERNAME, 'badpassword');
+	$req->content($json);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	
+	print "bad PUT (wrong pw): $result\n" if $VERBOSE;
+	
+	#do a bad put (payload not json encoded)
+	
+	$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . (2454725.98283 + int(rand(60))) . '","payload":["a", "b"]}';
+	my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$req->content($json);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	
+	print "bad PUT (payload not json-encoded): $result\n" if $VERBOSE;
+	
+	
+	#bad post (bad json);
+	$batch =~ s/\]$//;
+	$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
+	$req->content($batch);
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	print "bad batch upload (bad json): $result\n" if $VERBOSE;
+	
+	
+	#post with some bad records
+	
+	$batch .= "]";
+	$batch =~ s/parentid":"2/parentid":"3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333/g;
+	$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test";
+	$req->content($batch);
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$req->content_type('application/x-www-form-urlencoded');
+	$result = $ua->request($req)->content();
+	print "mixed batch upload (bad parentids on some): $result\n" if $VERBOSE;
+	
+	
+	# should return ["1", "2" .. "20"]
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "should return [\"1\", \"2\" .. \"20\"] (in some order): $result\n" if $VERBOSE;
+	
+	# should return ["1", "2" .. "20"]
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=index";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "should return [\"1\", \"2\" .. \"20\"] (in order): $result\n" if $VERBOSE;
+	
+	# should return ["1", "2" .. "20"]
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=depthindex";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "should return [\"1\", \"2\" .. \"20\"] (3 at end): $result\n" if $VERBOSE;
+	
+	# should return the user id record for #3 (check the depth)
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/3";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "should return record 3 (replaced depth): $result\n" if $VERBOSE;
+	
+	# should return the user id record for #4
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/4";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "should return record 4: $result\n" if $VERBOSE;
+	
+	# should return about half the ids
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?modified=2454755";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "modified after halftime: $result\n" if $VERBOSE;
+	
+	# should return about one-third the ids
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
+	
+	# mix our params
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454755";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "parentid and modified: $result\n" if $VERBOSE;
+	
+	#as above, but full records
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1&modified=2454755&full=1";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "parentid and modified (full records): $result\n" if $VERBOSE;
+	
+	#delete the first two with $parentid = 1
+	$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test?parentid=1&limit=2");
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "delete 2 items: $result\n" if $VERBOSE;
+	
+	# should return about one-third the ids, less the two we deleted
+	$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid=1";
+	$req->authorization_basic($USERNAME, $PASSWORD);
+	$result = $ua->request($req)->content();
+	print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
+	
+	
+	if ($DELETE_USER)
+	{
+		#clear the user again
+		my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$result = $ua->request($req)->content();
+		print "clear: $result\n" if $VERBOSE;
+	}
+	
+	if ($DO_ADMIN_TESTS && $DELETE_USER)
+	{
+		#delete the user
+		my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'delete', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];
+		$req->content_type('application/x-www-form-urlencoded');
+		$result = $ua->request($req)->content();
+		print "delete user: $result\n" if $VERBOSE;
+	}
 }
