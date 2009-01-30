@@ -42,9 +42,6 @@
 	require_once 'weave_authentication.php';
 	require_once 'weave_basic_object.php';
 	require_once 'weave_constants.php';
-	
-	
-	function jsonize($obj) { return $obj->json(); }
 
 	function report_problem($message, $code = 503)
 	{
@@ -60,16 +57,14 @@
 			header('WWW-Authenticate: Basic realm="Weave"');
 		}
 		
-		echo json_encode($message);
-		exit;
+		exit(json_encode($message));
 	}
 	
 	
 	header("Content-type: application/json");
 	
-	$path = array_key_exists('PATH_INFO', $_SERVER) ? $_SERVER['PATH_INFO'] : '/';
-	$path = substr($path, 1); #chop the lead slash
-	list($username, $collection, $id) = explode('/', $path.'//');
+	
+	#get the http auth user data
 	
 	$auth_user = array_key_exists('PHP_AUTH_USER', $_SERVER) ? $_SERVER['PHP_AUTH_USER'] : null;
 	$auth_pw = array_key_exists('PHP_AUTH_PW', $_SERVER) ? $_SERVER['PHP_AUTH_PW'] : null;
@@ -109,40 +104,37 @@
 		}
 	}
 
-	#Basic path validation. No point in going on if these are missing
+	#Basic path extraction and validation. No point in going on if these are missing
+	$path = array_key_exists('PATH_INFO', $_SERVER) ? $_SERVER['PATH_INFO'] : '/';
+	$path = substr($path, 1); #chop the lead slash
+	list($username, $collection, $id) = explode('/', $path.'//');
+
 	if (!$username)
-	{
 		report_problem('3', 400);
-	}
+
+	if ($auth_user != $username)
+		report_problem("5", 401);
 	
+	#only a get has meaning without a collection (GET returns a collection list)
+	if (!$collection && $_SERVER['REQUEST_METHOD'] != 'GET')
+		report_problem("1", 400);
+
+
 	#Auth the user
 	try 
 	{
 		$authdb = get_auth_object();
 		if (!$authdb->authenticate_user($auth_user, $auth_pw))
-		{
 			report_problem('Authentication failed', '401');
-		}
 	}
 	catch(Exception $e)
 	{
 		report_problem($e->getMessage(), $e->getCode());
 	}
 
-	
-
 	#user passes, onto actually getting the data
-	
-
 	if ($_SERVER['REQUEST_METHOD'] == 'GET')
 	{
-
-		if ($auth_user != $username)
-		{
-			report_problem("5", 401);
-		}
-
-		
 		try
 		{
 			$db = get_storage_read_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
@@ -152,11 +144,9 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 		
+		#if there's no collection provided, it's the root. Return a list of collections
 		if (!$collection)
-		{
-			echo json_encode($db->get_collection_list());
-			exit;
-		}
+			exit(json_encode($db->get_collection_list()));
 		
 		if ($id) #retrieve a single record
 		{
@@ -170,20 +160,17 @@
 			}
 			
 			if (count($wbo) > 0)
-			{
 				echo $wbo[0]->json();
-			}
 			else
-			{
 				report_problem("record not found", 404);
-			}
 		}
 		else #retrieve a batch of records. Sadly, due to potential record sizes, have the storage object stream the output...
 		{
 			$full = array_key_exists('full', $_GET) ? $_GET['full'] : null;
+			$outputter = new WBOJsonOutput($full);
 			try 
 			{
-				$ids = $db->retrieve_objects($collection, null, $full, 1,
+				$ids = $db->retrieve_objects($collection, null, $full, $outputter,
 							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
 							array_key_exists('modified', $_GET) ? $_GET['modified'] : null, 
 							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
@@ -198,21 +185,13 @@
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #add a single record to the server
 	{
-
-		if ($auth_user != $username)
-		{
-			report_problem("5", 401);
-		}
-
 		$putdata = fopen("php://input", "r");
 		$json = '';
 		while ($data = fread($putdata,2048)) {$json .= $data;};
 		
 		$wbo = new wbo();
 		if (!$wbo->extract_json($json))
-		{
 			report_problem("6", 400);
-		}
 		
 		#all server-side tests pass. now need the db connection
 		try
@@ -224,14 +203,9 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
-		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER))
-		{
-			$last_update = $db->get_max_timestamp($collection);
-			if ($last_update > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
-			{
-				report_problem("4", 412);	
-			}
-		}
+		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
+				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+			report_problem("4", 412);	
 		
 		#use the url if the json object doesn't have an id
 		if (!$wbo->id() && $id) { $wbo->id($id); }
@@ -245,13 +219,9 @@
 			{
 				#if there's no payload (as opposed to blank), then update the metadata
 				if ($wbo->payload_exists())
-				{
 					$db->store_object($wbo);
-				}
 				else
-				{
 					$db->update_object($wbo);
-				}
 			}
 			catch (Exception $e)
 			{
@@ -266,12 +236,6 @@
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'POST')
 	{
-	
-		if ($auth_user != $username)
-		{
-			report_problem("5", 401);
-		}
-
 		#stupid php being helpful with input data...
 		$putdata = fopen("php://input", "r");
 		$jsonstring = '';
@@ -279,9 +243,7 @@
 		$json = json_decode($jsonstring, true);
 
 		if (!$json)
-		{
 			report_problem("6", 400);
-		}
 
 		#now need the db connection
 		try
@@ -293,14 +255,9 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
-		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER))
-		{
-			$last_update = $db->get_max_timestamp($collection);
-			if ($last_update > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
-			{
-				report_problem("4", 412);	
-			}
-		}
+		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
+				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+			report_problem("4", 412);	
 		
 		
 		$success_ids = array();
@@ -311,9 +268,7 @@
 		{
 			$wbo = new wbo();
 			if (!$wbo->extract_json($wbo_data))
-			{
 				report_problem("6", 400);
-			}
 			
 			$wbo->collection($collection);
 			$wbo->modified($modified);
@@ -348,12 +303,6 @@
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 	{
-
-		if ($auth_user != $username)
-		{
-			report_problem("5", 401);
-		}
-
 		try
 		{
 			$db = get_storage_write_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
@@ -363,6 +312,7 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
+		$timestamp = round(microtime(1), 2);
 		if ($id)
 		{
 			try
@@ -373,7 +323,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode("success");
+			echo json_encode($timestamp);
 		}
 		else
 		{
@@ -390,7 +340,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode("success");
+			echo json_encode($timestamp);
 		}
 	}
 	else
@@ -399,4 +349,39 @@
 		report_problem("1", 400);
 	}
 		
+#The datasets we might be dealing with here are too large for sticking it all into an array, so
+#we need to define a direct-output method for the storage class to use. If we start producing multiples
+#(unlikely), we can put them in their own class.
+
+class WBOJsonOutput  
+{
+	private $_full = null;
+	private $_comma_flag = 0;
+
+	function __construct ($full = null)
+	{
+		$this->_full = $full;
+	}
+
+	function output($sth)
+	{
+		echo '[';
+		
+		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
+		{
+			if ($this->_comma_flag) { echo ','; } else { $this->_comma_flag = 1; }
+			if ($this->_full)
+			{
+				$wbo = new wbo();
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				echo $wbo->json();
+			}
+			else
+				echo json_encode($result{'id'});
+		}
+
+		echo ']';
+		return 1;
+	}
+}
 ?>

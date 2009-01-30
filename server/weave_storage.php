@@ -129,9 +129,9 @@ interface WeaveStorage
 
 class WeaveStorageMysql implements WeaveStorage
 {
-	var $_username;
-	var $_type = 'read';
-	var $_dbh;
+	private $_username;
+	private $_type = 'read';
+	private $_dbh;
 	
 	function __construct($username, $dbh = null) 
 	{
@@ -509,56 +509,24 @@ class WeaveStorageMysql implements WeaveStorage
 			throw new Exception("Database unavailable", 503);
 		}
 
-		$ids = array();
-		
 		if ($direct_output)
-		{
-			echo '[';
-			$comma_flag = 0;	
-		}
+			return $direct_output->output($sth);
 
+		$ids = array();
 		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
 		{
-			if ($direct_output)
-			{
-				if ($comma_flag) { echo ','; } else { $comma_flag = 1; }
-			}
-			
 			if ($full)
 			{
 				$wbo = new wbo();
 				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
-				if ($direct_output)
-				{
-					echo $wbo->json();
-				}
-				else
-				{
-					$ids[] = $wbo;
-				}
+				$ids[] = $wbo;
 			}
 			else
-			{
-				if ($direct_output)
-				{
-					echo json_encode($result{'id'});
-				}
-				else
-				{
-					$ids[] = $result{'id'};
-				}
-			}
-		}
-
-		if ($direct_output)
-		{
-			echo ']';
-			return 1;
-		}
-		
+				$ids[] = $result{'id'};
+		}		
 		return $ids;
 	}
-
+	
 	function create_user()
 	{
 		return 1; #nothing needs doing on the storage side
@@ -590,8 +558,8 @@ class WeaveStorageMysql implements WeaveStorage
 #Sqlite version of the object
 class WeaveStorageSqlite implements WeaveStorage
 {
-	var $_username;
-	var $_dbh;	
+	private $_username;
+	private $_dbh;	
 	
 	function __construct($username, $dbh = null) 
 	{
@@ -975,53 +943,21 @@ class WeaveStorageSqlite implements WeaveStorage
 			throw new Exception("Database unavailable", 503);
 		}
 
-		$ids = array();
-
 		if ($direct_output)
-		{
-			echo '[';
-			$comma_flag = 0;	
-		}
+			return $direct_output->output($sth);
 
+		$ids = array();
 		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
 		{
-			if ($direct_output)
-			{
-				if ($comma_flag) { echo ','; } else { $comma_flag = 1; }
-			}
-			
 			if ($full)
 			{
 				$wbo = new wbo();
 				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
-				if ($direct_output)
-				{
-					echo $wbo->json();
-				}
-				else
-				{
-					$ids[] = $wbo;
-				}
+				$ids[] = $wbo;
 			}
 			else
-			{
-				if ($direct_output)
-				{
-					echo json_encode($result{'id'});
-				}
-				else
-				{
-					$ids[] = $result{'id'};
-				}
-			}
-		}
-
-		if ($direct_output)
-		{
-			echo ']';
-			return 1;
-		}
-		
+				$ids[] = $result{'id'};
+		}		
 		return $ids;
 	}
 
