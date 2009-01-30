@@ -88,6 +88,8 @@ interface WeaveStorage
 	
 	function get_max_timestamp($collection);
 	
+	function get_collection_list();
+	
 	function store_object(&$wbo);
 	
 	function delete_object($collection, $id);
@@ -201,6 +203,31 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		$result = $sth->fetchColumn();
 		return round((float)$result, 2);		
+	}
+
+	function get_collection_list()
+	{		
+		try
+		{
+			$select_stmt = 'select distinct(collection) from wbo where username = :username';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_collection_list: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		
+		
+		$collections = array();
+		while ($result = $sth->fetchColumn())
+		{
+			$collections[] = $result;
+		}
+		
+		return $collections;		
 	}
 	
 	function store_object(&$wbo) 
@@ -629,6 +656,31 @@ class WeaveStorageSqlite implements WeaveStorage
 		$result = $sth->fetchColumn();
 		return round((float)$result, 2);		
 	}
+
+	function get_collection_list()
+	{		
+		try
+		{
+			$select_stmt = 'select distinct(collection) from wbo';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_collection_list: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		
+		
+		$collections = array();
+		while ($result = $sth->fetchColumn())
+		{
+			$collections[] = $result;
+		}
+		
+		return $collections;		
+	}
+
 
 	function store_object(&$wbo)
 	{

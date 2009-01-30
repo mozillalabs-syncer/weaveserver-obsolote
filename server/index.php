@@ -129,11 +129,6 @@
 		report_problem($e->getMessage(), $e->getCode());
 	}
 
-	if (!$collection)
-	{
-		echo json_encode("1");
-		exit;
-	}
 	
 
 	#user passes, onto actually getting the data
@@ -147,6 +142,7 @@
 			report_problem("5", 401);
 		}
 
+		
 		try
 		{
 			$db = get_storage_read_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
@@ -156,6 +152,11 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 		
+		if (!$collection)
+		{
+			echo json_encode($db->get_collection_list());
+			exit;
+		}
 		
 		if ($id) #retrieve a single record
 		{

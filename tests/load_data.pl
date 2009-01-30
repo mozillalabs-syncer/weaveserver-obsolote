@@ -374,6 +374,12 @@ sub user_work
 		$result = $ua->request($req)->content();
 		print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
 		
+		# should return ['test']
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/";
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$result = $ua->request($req)->content();
+		print "collection list: $result\n" if $VERBOSE;
+		
 		
 		if ($DELETE_USER)
 		{
