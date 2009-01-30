@@ -47,11 +47,18 @@ if (!defined('WEAVE_STORAGE_ENGINE')) { define('WEAVE_STORAGE_ENGINE', 'mysql');
 
 if (WEAVE_STORAGE_ENGINE == 'mysql')
 {
-	#if using mysql, host, db name, username and password for the auth store
-	if (!defined('WEAVE_MYSQL_STORE_HOST')) { define('WEAVE_MYSQL_STORE_HOST', 'localhost'); }
-	if (!defined('WEAVE_MYSQL_STORE_DB')) { define('WEAVE_MYSQL_STORE_DB', 'weave'); }
-	if (!defined('WEAVE_MYSQL_STORE_USER')) { define('WEAVE_MYSQL_STORE_USER', 'weave'); }
-	if (!defined('WEAVE_MYSQL_STORE_PASS')) { define('WEAVE_MYSQL_STORE_PASS', 'weave'); }
+	#if using mysql, host, db name, username and password for the auth store reader
+	if (!defined('WEAVE_MYSQL_STORE_READ_HOST')) { define('WEAVE_MYSQL_STORE_READ_HOST', 'localhost'); }
+	if (!defined('WEAVE_MYSQL_STORE_READ_DB')) { define('WEAVE_MYSQL_STORE_READ_DB', 'weave'); }
+	if (!defined('WEAVE_MYSQL_STORE_READ_USER')) { define('WEAVE_MYSQL_STORE_READ_USER', 'weave'); }
+	if (!defined('WEAVE_MYSQL_STORE_READ_PASS')) { define('WEAVE_MYSQL_STORE_READ_PASS', 'weave'); }
+
+	#if using mysql, host, db name, username and password for the auth store writer
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_HOST')) { define('WEAVE_MYSQL_STORE_WRITE_HOST', WEAVE_MYSQL_STORE_READ_HOST); }
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_DB')) { define('WEAVE_MYSQL_STORE_WRITE_DB', WEAVE_MYSQL_STORE_READ_DB); }
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_USER')) { define('WEAVE_MYSQL_STORE_WRITE_USER', WEAVE_MYSQL_STORE_READ_USER); }
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_PASS')) { define('WEAVE_MYSQL_STORE_WRITE_PASS', WEAVE_MYSQL_STORE_READ_PASS); }
+
 }
 elseif (WEAVE_STORAGE_ENGINE == 'sqlite')
 {

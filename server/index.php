@@ -137,14 +137,6 @@
 	
 
 	#user passes, onto actually getting the data
-	try
-	{
-		$db = get_storage_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
-	}
-	catch(Exception $e)
-	{
-		report_problem($e->getMessage(), $e->getCode());
-	}
 	
 
 	if ($_SERVER['REQUEST_METHOD'] == 'GET')
@@ -153,6 +145,15 @@
 		if ($auth_user != $username)
 		{
 			report_problem("5", 401);
+		}
+
+		try
+		{
+			$db = get_storage_read_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+		}
+		catch(Exception $e)
+		{
+			report_problem($e->getMessage(), $e->getCode());
 		}
 		
 		
@@ -212,6 +213,16 @@
 			report_problem("6", 400);
 		}
 		
+		#all server-side tests pass. now need the db connection
+		try
+		{
+			$db = get_storage_write_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+		}
+		catch(Exception $e)
+		{
+			report_problem($e->getMessage(), $e->getCode());
+		}
+
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER))
 		{
 			$last_update = $db->get_max_timestamp($collection);
@@ -269,6 +280,16 @@
 		if (!$json)
 		{
 			report_problem("6", 400);
+		}
+
+		#now need the db connection
+		try
+		{
+			$db = get_storage_write_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+		}
+		catch(Exception $e)
+		{
+			report_problem($e->getMessage(), $e->getCode());
 		}
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER))
@@ -330,6 +351,15 @@
 		if ($auth_user != $username)
 		{
 			report_problem("5", 401);
+		}
+
+		try
+		{
+			$db = get_storage_write_object($username, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+		}
+		catch(Exception $e)
+		{
+			report_problem($e->getMessage(), $e->getCode());
 		}
 
 		if ($id)

@@ -47,12 +47,26 @@ require_once 'weave_constants.php';
 #dbh: an already existing database handle to use. If a non-object, will not create
 #a db connection (must be done explicitly)
 
-function get_storage_object($username, $dbh = null)
+function get_storage_read_object($username, $dbh = null)
 {
 	switch(WEAVE_STORAGE_ENGINE)
 	{
 		case 'mysql':
 			return new WeaveStorageMysql($username, $dbh);
+		case 'sqlite':
+			return new WeaveStorageSqlite($username, $dbh);
+		default:
+			throw new Exception("Unknown storage type", 503);
+	}				
+}
+
+
+function get_storage_write_object($username, $dbh = null)
+{
+	switch(WEAVE_STORAGE_ENGINE)
+	{
+		case 'mysql':
+			return new WeaveStorageMysql($username, $dbh ? $dbh : 'write');
 		case 'sqlite':
 			return new WeaveStorageSqlite($username, $dbh);
 		default:
@@ -114,6 +128,7 @@ interface WeaveStorage
 class WeaveStorageMysql implements WeaveStorage
 {
 	var $_username;
+	var $_type = 'read';
 	var $_dbh;
 	
 	function __construct($username, $dbh = null) 
@@ -127,6 +142,11 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$this->_dbh = $dbh;
 		}
+		elseif (is_string($dbh) && $dbh == 'write')
+		{
+			$this->_type = 'write';
+			$this->open_connection();
+		}
 		#otherwise we do nothing with the connection and wait for it to be directly opened
 	}
 
@@ -134,8 +154,16 @@ class WeaveStorageMysql implements WeaveStorage
 	{		
 		try
 		{
-			$this->_dbh = new PDO('mysql:host=' . WEAVE_MYSQL_STORE_HOST . ';dbname=' . WEAVE_MYSQL_STORE_DB, 
-									WEAVE_MYSQL_STORE_USER, WEAVE_MYSQL_STORE_PASS);
+			if ($this->_type == 'write')
+			{
+				$this->_dbh = new PDO('mysql:host=' . WEAVE_MYSQL_STORE_WRITE_HOST . ';dbname=' . WEAVE_MYSQL_STORE_WRITE_DB, 
+									WEAVE_MYSQL_STORE_WRITE_USER, WEAVE_MYSQL_STORE_WRITE_PASS);
+			}
+			else
+			{
+				$this->_dbh = new PDO('mysql:host=' . WEAVE_MYSQL_STORE_READ_HOST . ';dbname=' . WEAVE_MYSQL_STORE_READ_DB, 
+									WEAVE_MYSQL_STORE_READ_USER, WEAVE_MYSQL_STORE_READ_PASS);
+			}
 			$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		}
 		catch( PDOException $exception )
