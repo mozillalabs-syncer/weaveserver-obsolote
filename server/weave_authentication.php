@@ -610,7 +610,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	{
 		try
 		{
-			$create_statement = "create table users (username text primary key, md5 text, email text)";
+			$create_statement = "create table users (username text primary key, md5 text, email text, status integer, alert text)";
 		
 			$sth = $this->_dbh->prepare($create_statement);
 			$sth->execute();

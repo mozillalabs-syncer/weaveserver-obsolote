@@ -41,31 +41,6 @@
 if (!defined('WEAVE_USER_ADMIN_SECRET')) { define('WEAVE_USER_ADMIN_SECRET', 'bad secret'); }
 
 
-#engine for storage.
-#Acceptable values: mysql | sqlite | none
-if (!defined('WEAVE_STORAGE_ENGINE')) { define('WEAVE_STORAGE_ENGINE', 'mysql'); }
-
-if (WEAVE_STORAGE_ENGINE == 'mysql')
-{
-	#if using mysql, host, db name, username and password for the auth store reader
-	if (!defined('WEAVE_MYSQL_STORE_READ_HOST')) { define('WEAVE_MYSQL_STORE_READ_HOST', 'localhost'); }
-	if (!defined('WEAVE_MYSQL_STORE_READ_DB')) { define('WEAVE_MYSQL_STORE_READ_DB', 'weave'); }
-	if (!defined('WEAVE_MYSQL_STORE_READ_USER')) { define('WEAVE_MYSQL_STORE_READ_USER', 'weave'); }
-	if (!defined('WEAVE_MYSQL_STORE_READ_PASS')) { define('WEAVE_MYSQL_STORE_READ_PASS', 'weave'); }
-
-	#if using mysql, host, db name, username and password for the auth store writer
-	if (!defined('WEAVE_MYSQL_STORE_WRITE_HOST')) { define('WEAVE_MYSQL_STORE_WRITE_HOST', WEAVE_MYSQL_STORE_READ_HOST); }
-	if (!defined('WEAVE_MYSQL_STORE_WRITE_DB')) { define('WEAVE_MYSQL_STORE_WRITE_DB', WEAVE_MYSQL_STORE_READ_DB); }
-	if (!defined('WEAVE_MYSQL_STORE_WRITE_USER')) { define('WEAVE_MYSQL_STORE_WRITE_USER', WEAVE_MYSQL_STORE_READ_USER); }
-	if (!defined('WEAVE_MYSQL_STORE_WRITE_PASS')) { define('WEAVE_MYSQL_STORE_WRITE_PASS', WEAVE_MYSQL_STORE_READ_PASS); }
-
-}
-elseif (WEAVE_STORAGE_ENGINE == 'sqlite')
-{
-	#if using sqlite, path to the sqlite db
-	if (!defined('WEAVE_SQLITE_STORE_DIRECTORY')) { define('WEAVE_SQLITE_STORE_DIRECTORY', '/Library/WebServer/dbs'); }
-}
-
 
 #engine for auth
 #Acceptable values: mysql | sqlite | ldap | none
@@ -91,15 +66,38 @@ elseif (WEAVE_AUTH_ENGINE == 'ldap')
 	if (!defined('WEAVE_LDAP_AUTH_USER_PARAM_NAME')) { define('WEAVE_LDAP_AUTH_USER_PARAM_NAME', 'uid'); }
 }
 
+
+#engine for storage.
+#Acceptable values: mysql | sqlite
+if (!defined('WEAVE_STORAGE_ENGINE')) { define('WEAVE_STORAGE_ENGINE', 'mysql'); }
+
+if (WEAVE_STORAGE_ENGINE == 'mysql')
+{
+	#if using mysql, host, db name, username and password for the auth store reader
+	if (!defined('WEAVE_MYSQL_STORE_READ_HOST')) { define('WEAVE_MYSQL_STORE_READ_HOST', 'localhost'); }
+	if (!defined('WEAVE_MYSQL_STORE_READ_DB')) { define('WEAVE_MYSQL_STORE_READ_DB', 'weave'); }
+	if (!defined('WEAVE_MYSQL_STORE_READ_USER')) { define('WEAVE_MYSQL_STORE_READ_USER', 'weave'); }
+	if (!defined('WEAVE_MYSQL_STORE_READ_PASS')) { define('WEAVE_MYSQL_STORE_READ_PASS', 'weave'); }
+
+	#if using mysql, host, db name, username and password for the auth store writer
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_HOST')) { define('WEAVE_MYSQL_STORE_WRITE_HOST', WEAVE_MYSQL_STORE_READ_HOST); }
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_DB')) { define('WEAVE_MYSQL_STORE_WRITE_DB', WEAVE_MYSQL_STORE_READ_DB); }
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_USER')) { define('WEAVE_MYSQL_STORE_WRITE_USER', WEAVE_MYSQL_STORE_READ_USER); }
+	if (!defined('WEAVE_MYSQL_STORE_WRITE_PASS')) { define('WEAVE_MYSQL_STORE_WRITE_PASS', WEAVE_MYSQL_STORE_READ_PASS); }
+
+}
+elseif (WEAVE_STORAGE_ENGINE == 'sqlite')
+{
+	#if using sqlite, path to the sqlite db
+	if (!defined('WEAVE_SQLITE_STORE_DIRECTORY')) { define('WEAVE_SQLITE_STORE_DIRECTORY', '/Library/WebServer/dbs'); }
+}
+
 #if you are using mysql for both auth and storage and they live in the same table, you may
 #share the database handle
 if (!defined('WEAVE_SHARE_DBH')) { define('WEAVE_SHARE_DBH', 0); }
 
 #The maximum size of a payload (set to 0 for unlimited) in bytes. Watch out for large characters!
 if (!defined('WEAVE_PAYLOAD_MAX_SIZE')) { define('WEAVE_PAYLOAD_MAX_SIZE', 262144); } #256K
-
-#requires the server to use a captcha when creating new accounts
-if (!defined('WEAVE_REGISTER_USE_CAPTCHA')) { define('WEAVE_REGISTER_USE_CAPTCHA', 0); }
 
 
 
