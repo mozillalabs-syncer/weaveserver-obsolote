@@ -98,11 +98,11 @@ interface WeaveStorage
 	
 	function delete_object($collection, $id);
 	
-	function delete_objects($collection, $id = null, $parentid = null, $modified = null, $limit = null, $offset = null);
+	function delete_objects($collection, $id = null, $parentid = null, $newer = null, $older = null, $limit = null, $offset = null);
 	
 	function retrieve_object($collection, $id);
 	
-	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $modified = null, $limit = null, $offset = null);
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $newer = null, $older = null, $limit = null, $offset = null);
 
 	function create_user();
 
@@ -377,7 +377,7 @@ class WeaveStorageMysql implements WeaveStorage
 		return 1;
 	}
 	
-	function delete_objects($collection, $id = null, $parentid = null, $modified = null, 
+	function delete_objects($collection, $id = null, $parentid = null, $newer = null, $older = null, 
 								$sort = null, $limit = null, $offset = null)
 	{
 		$params = array();
@@ -399,10 +399,16 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $parentid;
 		}
 		
-		if ($modified)
+		if ($newer)
 		{
-			$select_stmt .= " and modified > ?";
-			$params[] = $modified;
+			$select_stmt .= " and newer > ?";
+			$params[] = $newer;
+		}
+	
+		if ($older)
+		{
+			$select_stmt .= " and modified < ?";
+			$params[] = $older;
 		}
 	
 		if ($sort == 'index')
@@ -468,8 +474,8 @@ class WeaveStorageMysql implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $modified = null, 
-								$sort = null, $limit = null, $offset = null)
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $newer = null, 
+								$older = null, $sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
 		
@@ -490,10 +496,16 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $parentid;
 		}
 		
-		if ($modified)
+		if ($newer)
 		{
 			$select_stmt .= " and modified > ?";
-			$params[] = $modified;
+			$params[] = $newer;
+		}
+	
+		if ($older)
+		{
+			$select_stmt .= " and modified < ?";
+			$params[] = $older;
 		}
 	
 		if ($sort == 'index')
@@ -815,7 +827,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		return 1;
 	}
 	
-	function delete_objects($collection, $id = null, $parentid = null, $modified = null, 
+	function delete_objects($collection, $id = null, $parentid = null, $newer = null, $older = null, 
 								$sort = null, $limit = null, $offset = null)
 	{
 		$params = array();
@@ -826,7 +838,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			#sqlite can't do sort or limit deletes without special compiled versions
 			#so, we need to grab the set, then delete it manually.
 		
-			$params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $modified, $sort, $limit, $offset);
+			$params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $newer, $older, $sort, $limit, $offset);
 			if (!count($params))
 			{
 				return 1; #nothing to delete
@@ -854,10 +866,16 @@ class WeaveStorageSqlite implements WeaveStorage
 				$params[] = $parentid;
 			}
 			
-			if ($modified)
+			if ($newer)
 			{
 				$select_stmt .= " and modified > ?";
-				$params[] = $modified;
+				$params[] = $newer;
+			}
+		
+			if ($older)
+			{
+				$select_stmt .= " and modified < ?";
+				$params[] = $older;
 			}
 		
 			if ($sort == 'index')
@@ -923,7 +941,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $modified = null, $sort = null, $limit = null, $offset = null)
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $newer = null, $older = null, $sort = null, $limit = null, $offset = null)
 	{
 		$full_list = $full ? '*' : 'id';
 			
@@ -944,10 +962,16 @@ class WeaveStorageSqlite implements WeaveStorage
 			$params[] = $parentid;
 		}
 		
-		if ($modified)
+		if ($newer)
 		{
 			$select_stmt .= " and modified > ?";
-			$params[] = $modified;
+			$params[] = $newer;
+		}
+	
+		if ($older)
+		{
+			$select_stmt .= " and modified < ?";
+			$params[] = $older;
 		}
 	
 		if ($sort == 'index')

@@ -172,7 +172,8 @@
 			{
 				$ids = $db->retrieve_objects($collection, null, $full, $outputter,
 							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
-							array_key_exists('modified', $_GET) ? $_GET['modified'] : null, 
+							array_key_exists('newer', $_GET) ? $_GET['newer'] : null, 
+							array_key_exists('older', $_GET) ? $_GET['older'] : null, 
 							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
 							array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
 							array_key_exists('offset', $_GET) ? $_GET['offset'] : null);
@@ -328,6 +329,10 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
+		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
+				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+			report_problem("4", 412);	
+
 		$timestamp = round(microtime(1), 2);
 		if ($id)
 		{
@@ -347,7 +352,8 @@
 			{
 				$db->delete_objects($collection, null,  
 							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
-							array_key_exists('modified', $_GET) ? $_GET['modified'] : null, 
+							array_key_exists('newer', $_GET) ? $_GET['newer'] : null, 
+							array_key_exists('older', $_GET) ? $_GET['older'] : null, 
 							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
 							array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
 							array_key_exists('offset', $_GET) ? $_GET['offset'] : null);			
