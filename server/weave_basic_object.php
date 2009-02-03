@@ -53,6 +53,7 @@ class wbo
 		#need to check the json was valid here...
 		if (!$extracted)
 		{
+			$this->_error[] = "unable to extract from json";
 			return 0;
 		}
 		

@@ -86,6 +86,10 @@ interface WeaveStorage
 
 	function get_connection();
 	
+	function begin_transaction();
+
+	function commit_transaction();
+
 	function get_max_timestamp($collection);
 	
 	function get_collection_list();
@@ -180,6 +184,26 @@ class WeaveStorageMysql implements WeaveStorage
 		return $this->_dbh;
 	}
 
+	function begin_transaction()
+	{
+		try
+		{
+			$this->_dbh->beginTransaction();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("begin_transaction: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	}
+
+	function commit_transaction()
+	{
+		$this->_dbh->commit();
+		return 1;
+	}
+	
 	function get_max_timestamp($collection)
 	{
 		if (!$collection)
@@ -599,6 +623,26 @@ class WeaveStorageSqlite implements WeaveStorage
 	function get_connection()
 	{
 		return $this->_dbh;
+	}
+
+	function begin_transaction()
+	{
+		try
+		{
+			$this->_dbh->beginTransaction();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("begin_transaction: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+	}
+
+	function commit_transaction()
+	{
+		$this->_dbh->commit();
+		return 1;
 	}
 		
 	function get_max_timestamp($collection)

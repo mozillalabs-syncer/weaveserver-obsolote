@@ -264,11 +264,24 @@
 		$failed_ids = array();
 		
 		$modified = microtime(1);
+		
+		try
+		{
+			$db->begin_transaction();
+		}
+		catch(Exception $e)
+		{
+			report_problem($e->getMessage(), $e->getCode());
+		}
+
 		foreach ($json as $wbo_data)
 		{
 			$wbo = new wbo();
 			if (!$wbo->extract_json($wbo_data))
-				report_problem("6", 400);
+			{
+				$failed_ids[$wbo->id()] = $wbo->get_error();
+				continue;
+			}
 			
 			$wbo->collection($collection);
 			$wbo->modified($modified);
@@ -290,7 +303,8 @@
 				}
 				catch (Exception $e)
 				{
-					report_problem($e->getMessage(), $e->getCode());
+					$failed_ids[$wbo->id()] = $e->getMessage();
+					continue;
 				}
 				$success_ids[] = $wbo->id();
 			}
@@ -299,6 +313,8 @@
 				$failed_ids[$wbo->id()] = $wbo->get_error();
 			}
 		}
+		$db->commit_transaction();
+		
 		echo json_encode(array('modified' => round($modified, 2), 'success' => $success_ids, 'failed' => $failed_ids));
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
