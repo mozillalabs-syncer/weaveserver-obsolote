@@ -107,6 +107,8 @@ interface WeaveStorage
 	function create_user();
 
 	function delete_user();
+
+	function heartbeat();
 }
 
 
@@ -586,6 +588,22 @@ class WeaveStorageMysql implements WeaveStorage
 		return 1;
 
 	}
+
+	function heartbeat()
+	{
+		try
+		{
+			$sth = $this->_dbh->prepare('select 1');
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			throw new Exception("Database unavailable");
+		}
+		$result = $sth->fetchColumn();
+		return $result;
+	}
+
 }
 
 
@@ -1089,6 +1107,21 @@ end;
 		$username_md5 = md5($this->_username);
 		$db_name = WEAVE_SQLITE_STORE_DIRECTORY . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
 		unlink($db_name);
+	}
+
+	function heartbeat()
+	{
+		try
+		{
+			$sth = $this->_dbh->prepare('select 1');
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			throw new Exception("Database unavailable");
+		}
+		$result = $sth->fetchColumn();
+		return $result;
 	}
 }
 
