@@ -628,6 +628,22 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 class WeaveAuthenticationLDAP implements WeaveAuthentication
 {
 	var $_conn;
+	
+	private function generateSSHAPassword($password) {
+	    return exec('/usr/sbin/slappasswd -h {SSHA} -s '.
+	      escapeshellarg($password));
+	}
+	
+	private function bindAsAdmin() {
+		if (!ldap_bind($this->_conn, WEAVE_LDAP_ADMIN_DN,
+			 			WEAVE_LDAP_ADMIN_PASS))
+			throw new Exception("Invalid LDAP Admin", 503);
+	}
+	
+	private function constructUserDN($user) {
+		return WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$user,".WEAVE_LDAP_AUTH_DN;
+	}
+	
 	function __construct($conn = null)
 	{
 		if (!$conn)
@@ -657,7 +673,24 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
   
 	function create_user($username, $password, $email = "")
 	{
-		return 1;
+		$this->bindAsAdmin();
+		
+		$dn = $this->constructUserDN($username);
+		$record = array(
+			'cn' => $username,
+			'sn' => $username,
+			'primaryNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
+			'rescueNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
+			'uid' => $username,
+			'loginShell' => '/bin/bash',
+			'userPassword' => $this->generateSSHAPassword($password),
+			'account-enabled' => 'Yes',
+			'mail' => $email,
+			'objectClass' => array('posixAccount', 'dataStore',
+				'person', 'mailObject')
+		);
+		
+		return ldap_add($this->_conn, $dn, $record);
 	}
 	
 	function get_user_location($username)
@@ -667,34 +700,57 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 
 	function update_password($username, $password)
 	{
-		return 1;
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+		if (!$password)
+		{
+			throw new Exception("7", 404);
+		}
+		$this->bindAsAdmin();
+		
+		$dn = $this->constructUserDN($username);
+		$nP = array('userPassword' => $this->generateSSHAPassword($password));
+		return ldap_mod_replace($this->_conn, $dn, $nP);
 	}
 
 	function update_email($username, $email = "")
 	{
-		return 1;
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+		$this->bindAsAdmin();
+		
+		$dn = $this->constructUserDN($username);
+		$nE = array('mail' => $email);
+		return ldap_mod_replace($this->_conn, $dn, $nE);
 	}
 	
 	function authenticate_user($user, $pass)
 	{
-		$userdn = WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$user";
-		if (WEAVE_LDAP_AUTH_DN)
-		{
-			$userdn .= ",".WEAVE_LDAP_AUTH_DN;
-		}
-		if (ldap_bind($this->_conn, $userdn, $pass))
+		$dn = $this->constructUserDN($username);
+
+		if (ldap_bind($this->_conn, $dn, $pass))
 			return 1;
 		return 0;
 	}
 
 	function delete_user($username)
 	{
-		return 1;
+		$this->bindAsAdmin();
+		$dn = $this->constructUserDN($username);
+		return ldap_delete($this->_conn, $dn);
 	}
 	
 	function user_exists($username)
 	{
-		return 0;
+		$this->bindAsAdmin();
+		$search = ldap_search($this->_conn, WEAVE_LDAP_AUTH_DN,
+					"(".WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$username)");
+					
+		return ldap_count_entries($this->_conn, $search);
 	}
 }
 
