@@ -219,7 +219,7 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email) values (:username, :md5, :email)';
+			$insert_stmt = 'insert into users (username, md5, email, status) values (:username, :md5, :email, 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
@@ -393,7 +393,7 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	{
 		try
 		{
-			$create_statement = "create table users (username varchar(32) primary key, md5 varchar(32), email varchar(64)) engine=InnoDB";
+			$create_statement = "create table users (username varchar(32) primary key, md5 varchar(32), email varchar(64), status tinyint default 1, alert text) engine=InnoDB";
 		
 			$sth = $this->_dbh->prepare($create_statement);
 			$sth->execute();
@@ -468,7 +468,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email) values (:username, :md5, :email)';
+			$insert_stmt = 'insert into users (username, md5, email, status) values (:username, :md5, :email, 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
