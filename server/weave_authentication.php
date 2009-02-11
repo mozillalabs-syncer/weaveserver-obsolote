@@ -78,6 +78,8 @@ interface WeaveAuthentication
 
 	function authenticate_user($username, $password);
 
+	function get_user_alert();
+
 	function get_user_location($username);
 	
 	function delete_user($username);
@@ -125,6 +127,11 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 		return 1;
 	}
 	
+	function get_user_alert()
+	{
+		return "";
+	}
+
 	function delete_user($username)
 	{
 		return 1;
@@ -156,6 +163,7 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 class WeaveAuthenticationMysql implements WeaveAuthentication
 {
 	var $_dbh;
+	var $_alert = null;
 	
 	function __construct($dbh = null) 
 	{
@@ -308,7 +316,7 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	{
 		try
 		{
-			$select_stmt = 'select count(*) from users where username = :username and md5 = :md5';
+			$select_stmt = 'select status, alert from users where username = :username and md5 = :md5';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
@@ -320,8 +328,18 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 			throw new Exception("Database unavailable", 503);
 		}
 
-		$result = $sth->fetchColumn();
-		return $result ? 1 : 0;
+		if (!$result = $sth->fetch(PDO::FETCH_ASSOC))
+		{
+			return null;
+		}
+		
+		$this->_alert = $result['alert'];
+		return $result['status'];
+	}
+	
+	function get_user_alert()
+	{
+		return $this->_alert;
 	}
 	
 	function get_user_location($username)
@@ -396,6 +414,7 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 class WeaveAuthenticationSqlite implements WeaveAuthentication
 {
 	var $_dbh;
+	var $_alert;
 	
 	function __construct($dbh = null)
 	{
@@ -529,7 +548,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	{
 		try
 		{
-			$select_stmt = 'select count(*) from users where username = :username and md5 = :md5';
+			$select_stmt = 'select status, alert from users where username = :username and md5 = :md5';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
@@ -541,8 +560,18 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 			throw new Exception("Database unavailable", 503);
 		}
 
-		$result = $sth->fetchColumn();
-		return $result;
+		if (!$result = $sth->fetch(PDO::FETCH_ASSOC))
+		{
+			return null;
+		}
+		
+		$this->_alert = $result['alert'];
+		return $result['status'];
+	}
+	
+	function get_user_alert()
+	{
+		return $this->_alert;
 	}
 	
 	function get_user_location($username)
@@ -628,6 +657,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 class WeaveAuthenticationLDAP implements WeaveAuthentication
 {
 	var $_conn;
+	var $_alert;
 	
 	private function generateSSHAPassword($password) {
 	    return exec('/usr/sbin/slappasswd -h {SSHA} -s '.
@@ -737,6 +767,11 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		return 0;
 	}
 
+	function get_user_alert()
+	{
+		return $this->_alert;
+	}
+	
 	function delete_user($username)
 	{
 		$this->bindAsAdmin();
