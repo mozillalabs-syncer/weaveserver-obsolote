@@ -78,6 +78,10 @@ interface WeaveAuthentication
 
 	function authenticate_user($username, $password);
 
+	function update_status($username, $status);
+
+	function update_alert($username, $status);
+
 	function get_user_alert();
 
 	function get_user_location($username);
@@ -127,6 +131,16 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 		return 1;
 	}
 	
+	function update_status($username, $status)
+	{
+		return 1;
+	}
+
+	function update_alert($username, $alert)
+	{
+		return 1;
+	}
+
 	function get_user_alert()
 	{
 		return "";
@@ -335,6 +349,60 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		
 		$this->_alert = $result['alert'];
 		return $result['status'];
+	}
+
+	function update_status($username, $status)
+	{
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set status = :status where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':status', $status);
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_status: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+		
+	}
+
+	function update_alert($username, $alert)
+	{
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set alert = :alert where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':alert', $alert);
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_alert: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+		
 	}
 	
 	function get_user_alert()
@@ -569,6 +637,60 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		return $result['status'];
 	}
 	
+
+	function update_status($username, $status)
+	{
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set status = :status where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':status', $status);
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_status: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+		
+	}
+
+	function update_alert($username, $alert)
+	{
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+
+		try
+		{
+			$insert_stmt = 'update users set alert = :alert where username = :username';
+			$sth = $this->_dbh->prepare($insert_stmt);
+			$sth->bindParam(':username', $username);
+			$sth->bindParam(':alert', $alert);
+			if ($sth->execute() == 0)
+			{
+				throw new Exception("User not found", 404);
+			}
+		}
+		catch( PDOException $exception )
+		{
+			error_log("update_alert: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		return 1;
+		
+	}
 	function get_user_alert()
 	{
 		return $this->_alert;
@@ -767,6 +889,17 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		return 0;
 	}
 
+
+	function update_status($username, $status)
+	{
+		return 1;
+	}
+
+	function update_alert($username, $alert)
+	{
+		return 1;
+		
+	}
 	function get_user_alert()
 	{
 		return $this->_alert;
