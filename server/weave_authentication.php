@@ -792,7 +792,13 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 			throw new Exception("Invalid LDAP Admin", 503);
 	}
 	
-	private function constructUserDN($user) {
+	private function bindAsLookup() {
+		if (!ldap_bind($this->_conn, WEAVE_LDAP_BIND_DN,
+						WEAVE_LDAP_BIND_PASS))
+			throw new Exception("Invalid LDAP BindUser", 503);
+	}
+	
+ 	private function constructUserDN($user) {
 		/* This is specific to our Weave cluster */
 		if (WEAVE_LDAP_AUTH_DN == "dc=mozilla") {
 			$md = md5($user);
@@ -934,7 +940,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	
 	function user_exists($username)
 	{
-		$this->bindAsAdmin();
+		$this->bindAsLookup();
 		$search = ldap_search($this->_conn, WEAVE_LDAP_AUTH_DN,
 					"(".WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$username)");
 					
