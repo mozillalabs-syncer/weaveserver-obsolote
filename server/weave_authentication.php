@@ -793,6 +793,20 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	}
 	
 	private function constructUserDN($user) {
+		/* This is specific to our Weave cluster */
+		if (WEAVE_LDAP_AUTH_DN == "dc=mozilla") {
+			$md = md5($user);
+			$a1 = substr($md, 0, 5);
+			$a2 = substr($md, 1, 4);
+			$a3 = substr($md, 2, 3);
+			$a4 = substr($md, 3, 2);
+			$a5 = substr($md, 4, 1);
+			
+			$dn = WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$user,";
+			$dn .= "dc=$a1,dc=$a2,dc=$a3,dc=$a4,dc=$a5,".WEAVE_LDAP_AUTH_DN;
+			return $dn;
+		}
+		
 		return WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$user,".WEAVE_LDAP_AUTH_DN;
 	}
 	
@@ -811,10 +825,15 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	function open_connection()
 	{
 		$this->_conn = ldap_connect(WEAVE_LDAP_AUTH_HOST);
-
 		if (!$this->_conn)
 			throw new Exception("Cannot contact LDAP server", 503);
 
+		ldap_set_option($this->_conn, LDAP_OPT_PROTOCOL_VERSION, 3);
+		
+		if (WEAVE_LDAP_USE_TLS) {
+			if (!ldap_start_tls($this->_conn))
+				throw new Exception("Cannot establish TLS connection", 503);
+		}
 		return 1;
 	}
 
@@ -826,20 +845,21 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	function create_user($username, $password, $email = "")
 	{
 		$this->bindAsAdmin();
-		
+
 		$dn = $this->constructUserDN($username);
+		$key = sha1(mt_rand().$username);
+
 		$record = array(
 			'cn' => $username,
 			'sn' => $username,
 			'primaryNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
 			'rescueNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
 			'uid' => $username,
-			'loginShell' => '/bin/bash',
 			'userPassword' => $this->generateSSHAPassword($password),
+			'mail-verified' => $key,
 			'account-enabled' => 'Yes',
 			'mail' => $email,
-			'objectClass' => array('posixAccount', 'dataStore',
-				'person', 'mailObject')
+			'objectClass' => array('dataStore', 'inetOrgPerson')
 		);
 		
 		return ldap_add($this->_conn, $dn, $record);
