@@ -42,10 +42,10 @@ use LWP;
 use HTTP::Request;
 use HTTP::Request::Common qw/PUT GET POST/;
 use Data::Dumper;
-
+use Time::HiRes qw/gettimeofday tv_interval/;
 
 my $PROTOCOL = 'http';
-my $SERVER = 'localhost';
+my $SERVER = 'sm-weave-proxy01.mozilla.org';
 my $USERNAME = 'test_user';
 my $PASSWORD = 'test123';
 my $ADMIN_SECRET = 'bad secret';
@@ -58,6 +58,24 @@ my $DELETE_USER = defined $ARGV[2] ? $ARGV[2] : 1;
 my $USE_RANDOM_USERNAME = defined $ARGV[3] ? $ARGV[3] : 1;
 my $LOOPS = $ARGV[4] || 1;
 my $CHILDREN = $ARGV[5];
+my $TIMING = $ARGV[6];
+
+my $filelen = 0;
+
+if (-f $USE_RANDOM_USERNAME)
+{
+	open(USERS, $USE_RANDOM_USERNAME);
+	1 while <USERS>;
+	$filelen = $.;
+	close USERS;
+}
+
+if ($TIMING)
+{
+	open OUT, ">>$TIMING" or die "can't open $TIMING: $!";
+	print OUT time() . "\t$CHILDREN\t$LOOPS\n";
+	close OUT;
+}
 
 if ($CHILDREN)
 {
@@ -75,6 +93,7 @@ if ($CHILDREN)
 		else
 		{
 			user_work();
+			exit;
 		}
 	}
 	while ($kids > 0)
@@ -110,34 +129,53 @@ sub user_work
 		$number += 7 if $number > 57;
 		$id_prefix .= chr($number);
 	}
-	
+
+	my $time1;
+	my @timearray;		
+
 	foreach (1..$LOOPS)
 	{
+		if ($USE_RANDOM_USERNAME == 1)
+		{
+			my $length = rand(10) + 6;
+			$USERNAME = '';
+			for (1..$length)
+			{
+				my $number = int(rand(36)) + 48;
+				$number += 7 if $number > 57;
+				$USERNAME .= chr($number);
+			}
+		}
+		elsif (-f $USE_RANDOM_USERNAME && $filelen > 0)
+		{
+			my $pos = int(rand($filelen));
+			open (USERS, $USE_RANDOM_USERNAME) or die "can't open $USE_RANDOM_USERNAME: $!";
+			my $i = 0;
+			while ($i++ < $pos) {my $line = <USERS>}
+			$USERNAME = <USERS>;
+			close USERS;
+			chomp $USERNAME;
+			next unless $USERNAME;
+		}
+	
 		if ($DO_ADMIN_TESTS)
 		{
-		
-			if ($USE_RANDOM_USERNAME)
-			{
-				my $length = rand(10) + 6;
-				$USERNAME = '';
-				for (1..$length)
-				{
-					my $number = int(rand(36)) + 48;
-					$number += 7 if $number > 57;
-					$USERNAME .= chr($number);
-				}
-			}
-			
 			#create the user
 			$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
 			$req->content_type('application/x-www-form-urlencoded');
+			
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[0] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+			
 			print "create user: $result\n" if $VERBOSE;
 		
 			#create the user again
 			$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
 			$req->content_type('application/x-www-form-urlencoded');
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[1] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 			print "create user again (should fail): $result\n" if $VERBOSE;
 		
 			#check user existence
@@ -150,21 +188,31 @@ sub user_work
 			$PASSWORD .= '2';
 			my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => $ADMIN_SECRET];
 			$req->content_type('application/x-www-form-urlencoded');
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[2] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 			print "change password: $result\n" if $VERBOSE;
 			
 			#change password (bad secret)
 			my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'update', 'user' => $USERNAME, 'pass' => $PASSWORD, 'secret' => 'wrong secret'];
 			$req->content_type('application/x-www-form-urlencoded');
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[3] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 			print "change password(bad secret): $result\n" if $VERBOSE;
 		}	
 		
-		#clear the user
-		$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
-		$req->authorization_basic($USERNAME, $PASSWORD);
-		$result = $ua->request($req)->content();
-		print "delete: $result\n" if $VERBOSE;
+		if ($DELETE_USER)
+		{
+			#clear the user
+			$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
+			$req->authorization_basic($USERNAME, $PASSWORD);
+			$time1 = [gettimeofday()] if $TIMING;
+			$result = $ua->request($req)->content();
+			$timearray[4] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+			print "delete: $result\n" if $VERBOSE;
+		}
+		
 		my $id = 0;
 		
 		#upload 10 items individually
@@ -178,7 +226,9 @@ sub user_work
 			$req->authorization_basic($USERNAME, $PASSWORD);
 			$req->content($json);
 			$req->content_type('application/x-www-form-urlencoded');
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[5] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 			
 			print $id . ": $result\n" if $VERBOSE;
 		}
@@ -202,7 +252,9 @@ sub user_work
 		$req->content_type('application/x-www-form-urlencoded');
 		{
 			local $SIG{'__WARN__'} = sub{}; # stupid warn in LWP can't be suppressed any other way...
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[6] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		}
 		print "batch upload: $result\n" if $VERBOSE;
 		
@@ -213,7 +265,9 @@ sub user_work
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[7] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		
 		print "replace: $result\n" if $VERBOSE;
 		
@@ -225,7 +279,9 @@ sub user_work
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
 		
+		$time1 = [gettimeofday()] if $TIMING;
 		my $timestamp = $ua->request($req)->content();
+		$timearray[8] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "replace: $timestamp\n" if $VERBOSE;
 		
 		#do a replace (timestamp too old)
@@ -235,7 +291,9 @@ sub user_work
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[9] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		
 		print "replace (older, should fail): $result\n" if $VERBOSE;
 		
@@ -248,7 +306,9 @@ sub user_work
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[10] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		
 		print "bad PUT (no id): $result\n" if $VERBOSE;
 		
@@ -260,7 +320,9 @@ sub user_work
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[11] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		
 		print "bad PUT (bad json): $result\n" if $VERBOSE;
 		
@@ -271,7 +333,9 @@ sub user_work
 		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/$id";
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[12] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		
 		print "bad PUT (no auth): $result\n" if $VERBOSE;
 		
@@ -282,7 +346,9 @@ sub user_work
 		$req->authorization_basic($USERNAME, 'badpassword');
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[13] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		
 		print "bad PUT (wrong pw): $result\n" if $VERBOSE;
 		
@@ -293,7 +359,9 @@ sub user_work
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[14] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		
 		print "bad PUT (payload not json-encoded): $result\n" if $VERBOSE;
 		
@@ -306,7 +374,9 @@ sub user_work
 		$req->content_type('application/x-www-form-urlencoded');
 		{
 			local $SIG{'__WARN__'} = sub{}; # stupid warn in LWP can't be suppressed any other way...
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[15] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		}
 		print "bad batch upload (bad json): $result\n" if $VERBOSE;
 		
@@ -321,7 +391,9 @@ sub user_work
 		$req->content_type('application/x-www-form-urlencoded');
 		{
 			local $SIG{'__WARN__'} = sub{}; # stupid warn in LWP can't be suppressed any other way...
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[16] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		}
 		print "mixed batch upload (bad parentids on some): $result\n" if $VERBOSE;
 		
@@ -329,73 +401,97 @@ sub user_work
 		# should return ["1", "2" .. "20"]
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[17] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return [\"1\", \"2\" .. \"20\"] (in some order): $result\n" if $VERBOSE;
 		
 		# should return ["1", "2" .. "20"]
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=index";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[18] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return [\"1\", \"2\" .. \"20\"] (in order): $result\n" if $VERBOSE;
 		
 		# should return ["1", "2" .. "20"]
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?sort=depthindex";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[19] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return [\"1\", \"2\" .. \"20\"] (3 at end): $result\n" if $VERBOSE;
 		
 		# should return the user id record for #3 (check the depth)
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/{$id_prefix}3";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[20] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return record 3 (replaced depth): $result\n" if $VERBOSE;
 		
 		# should return the user id record for #4
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/{$id_prefix}4";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[21] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return record 4: $result\n" if $VERBOSE;
 		
 		# should return about half the ids
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?modified=2454755";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[22] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "modified after halftime: $result\n" if $VERBOSE;
 		
 		# should return about one-third the ids
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid={$id_prefix}1";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[23] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
 		
 		# mix our params
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid={$id_prefix}1&modified=2454755";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[24] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "parentid and modified: $result\n" if $VERBOSE;
 		
 		#as above, but full records
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid={$id_prefix}1&modified=2454755&full=1";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[25] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "parentid and modified (full records): $result\n" if $VERBOSE;
 		
 		#delete the first two with $parentid = 1
 		$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test?parentid={$id_prefix}1&limit=2");
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[26] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "delete 2 items: $result\n" if $VERBOSE;
 		
 		# should return about one-third the ids, less the two we deleted
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test/?parentid={$id_prefix}1";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[27] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
 		
 		# should return ['test']
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/";
 		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
+		$timearray[28] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "collection list: $result\n" if $VERBOSE;
 		
 		
@@ -404,7 +500,9 @@ sub user_work
 			#clear the user again
 			my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/test");
 			$req->authorization_basic($USERNAME, $PASSWORD);
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[29] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 			print "clear: $result\n" if $VERBOSE;
 		}
 		
@@ -413,8 +511,19 @@ sub user_work
 			#delete the user
 			my $req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX", ['function' => 'delete', 'user' => $USERNAME, 'secret' => $ADMIN_SECRET];
 			$req->content_type('application/x-www-form-urlencoded');
+			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
+			$timearray[30] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 			print "delete user: $result\n" if $VERBOSE;
 		}
+	}
+	
+	if ($TIMING)
+	{
+		open OUT, ">>$TIMING";
+		$timearray[5] = $timearray[5]/10;
+		@timearray = map {sprintf("%0.4f", $_ / $LOOPS)} @timearray;
+		print OUT join("\t", @timearray) . "\n";
+		close OUT;
 	}
 }

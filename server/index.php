@@ -132,9 +132,9 @@
 		report_problem($e->getMessage(), $e->getCode());
 	}
 
-	#set the X-Weave-Alert header if the user needs to know something
+	#set an X-Weave-Alert header if the user needs to know something
 	if ($alert = $authdb->get_user_alert())
-		header("X-Weave-Alert: $alert");
+		header("X-Weave-Alert: $alert", false);
 	
 	#user passes, onto actually getting the data
 	if ($_SERVER['REQUEST_METHOD'] == 'GET')
