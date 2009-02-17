@@ -904,7 +904,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	
 	function authenticate_user($user, $pass)
 	{
-		$dn = $this->constructUserDN($username);
+		$dn = $this->constructUserDN($user);
 
 		if (ldap_bind($this->_conn, $dn, $pass))
 			return 1;
