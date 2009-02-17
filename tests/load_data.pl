@@ -45,7 +45,7 @@ use Data::Dumper;
 use Time::HiRes qw/gettimeofday tv_interval/;
 
 my $PROTOCOL = 'http';
-my $SERVER = 'sm-weave-proxy01.mozilla.org';
+my $SERVER = 'localhost';
 my $USERNAME = 'test_user';
 my $PASSWORD = 'test123';
 my $ADMIN_SECRET = 'bad secret';
