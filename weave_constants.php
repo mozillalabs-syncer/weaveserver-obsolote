@@ -62,8 +62,11 @@ elseif (WEAVE_AUTH_ENGINE == 'sqlite')
 elseif (WEAVE_AUTH_ENGINE == 'ldap')
 {
 	if (!defined('WEAVE_LDAP_AUTH_HOST')) { define('WEAVE_LDAP_AUTH_HOST', 'localhost'); }
+	if (!defined('WEAVE_LDAP_AUTH_USER')) { define('WEAVE_LDAP_AUTH_USER', 'weave'); }
+	if (!defined('WEAVE_LDAP_AUTH_PASS')) { define('WEAVE_LDAP_AUTH_PASS', 'weave'); }
 	if (!defined('WEAVE_LDAP_AUTH_DN')) { define('WEAVE_LDAP_AUTH_DN', ''); }
 	if (!defined('WEAVE_LDAP_AUTH_USER_PARAM_NAME')) { define('WEAVE_LDAP_AUTH_USER_PARAM_NAME', 'uid'); }
+	if (!defined('WEAVE_LDAP_CLUSTER')) { define('WEAVE_LDAP_CLUSTER', ''); }
 }
 
 
