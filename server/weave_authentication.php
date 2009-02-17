@@ -782,20 +782,14 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	var $_alert;
 	
 	private function generateSSHAPassword($password) {
-	    return exec('/usr/sbin/slappasswd -h {SSHA} -s '.
+	    return exec('/usr/sbin/slappasswd2.4 -h {SSHA} -s '.
 	      escapeshellarg($password));
 	}
 	
-	private function bindAsAdmin() {
-		if (!ldap_bind($this->_conn, WEAVE_LDAP_ADMIN_DN,
-			 			WEAVE_LDAP_ADMIN_PASS))
+	private function authorize() {
+		if (!ldap_bind($this->_conn, WEAVE_LDAP_AUTH_USER.",".
+			WEAVE_LDAP_AUTH_DN, WEAVE_LDAP_AUTH_PASS))
 			throw new Exception("Invalid LDAP Admin", 503);
-	}
-	
-	private function bindAsLookup() {
-		if (!ldap_bind($this->_conn, WEAVE_LDAP_BIND_DN,
-						WEAVE_LDAP_BIND_PASS))
-			throw new Exception("Invalid LDAP BindUser", 503);
 	}
 	
  	private function constructUserDN($user) {
@@ -836,10 +830,12 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 
 		ldap_set_option($this->_conn, LDAP_OPT_PROTOCOL_VERSION, 3);
 		
+		/*
 		if (WEAVE_LDAP_USE_TLS) {
 			if (!ldap_start_tls($this->_conn))
 				throw new Exception("Cannot establish TLS connection", 503);
 		}
+		*/
 		return 1;
 	}
 
@@ -850,7 +846,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
   
 	function create_user($username, $password, $email = "")
 	{
-		$this->bindAsAdmin();
+		$this->authorize();
 
 		$dn = $this->constructUserDN($username);
 		$key = sha1(mt_rand().$username);
@@ -886,7 +882,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		{
 			throw new Exception("7", 404);
 		}
-		$this->bindAsAdmin();
+		$this->authorize();
 		
 		$dn = $this->constructUserDN($username);
 		$nP = array('userPassword' => $this->generateSSHAPassword($password));
@@ -899,7 +895,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		{
 			throw new Exception("3", 404);
 		}
-		$this->bindAsAdmin();
+		$this->authorize();
 		
 		$dn = $this->constructUserDN($username);
 		$nE = array('mail' => $email);
@@ -933,14 +929,14 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	
 	function delete_user($username)
 	{
-		$this->bindAsAdmin();
+		$this->authorize();
 		$dn = $this->constructUserDN($username);
 		return ldap_delete($this->_conn, $dn);
 	}
 	
 	function user_exists($username)
 	{
-		$this->bindAsLookup();
+		$this->authorize();
 		$search = ldap_search($this->_conn, WEAVE_LDAP_AUTH_DN,
 					"(".WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$username)");
 					
