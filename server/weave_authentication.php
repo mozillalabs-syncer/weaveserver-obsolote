@@ -902,11 +902,11 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		return ldap_mod_replace($this->_conn, $dn, $nE);
 	}
 	
-	function authenticate_user($user, $pass)
+	function authenticate_user($username, $password)
 	{
-		$dn = $this->constructUserDN($user);
+		$dn = $this->constructUserDN($username);
 
-		if (ldap_bind($this->_conn, $dn, $pass))
+		if (ldap_bind($this->_conn, $dn, $password))
 			return 1;
 		return 0;
 	}
