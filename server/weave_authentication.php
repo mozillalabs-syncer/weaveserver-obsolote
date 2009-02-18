@@ -886,7 +886,11 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		
 		$dn = $this->constructUserDN($username);
 		$nP = array('userPassword' => $this->generateSSHAPassword($password));
-		return ldap_mod_replace($this->_conn, $dn, $nP);
+		
+		if (!ldap_mod_replace($this->_conn, $dn, $nP)) {
+		  throw new Exception("Could not change password!", 503);
+		}
+		return 1;
 	}
 
 	function update_email($username, $email = "")
@@ -899,7 +903,11 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		
 		$dn = $this->constructUserDN($username);
 		$nE = array('mail' => $email);
-		return ldap_mod_replace($this->_conn, $dn, $nE);
+		
+		if (!ldap_mod_replace($this->_conn, $dn, $nE)) {
+		  throw new Exception("Could not update email!", 503);
+		}
+		return 1;
 	}
 	
 	function authenticate_user($username, $password)
