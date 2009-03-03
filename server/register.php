@@ -65,7 +65,7 @@
 	try
 	{
 		$authdb = get_auth_object();
-		$storagedb = get_storage_object($username, null, 1);
+		$storagedb = get_storage_write_object($username, null, 1);
 		
 		switch($action)
 		{
