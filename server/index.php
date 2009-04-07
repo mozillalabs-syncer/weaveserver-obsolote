@@ -105,7 +105,13 @@
 	}
 
 	#Basic path extraction and validation. No point in going on if these are missing
-	$path = array_key_exists('PATH_INFO', $_SERVER) ? $_SERVER['PATH_INFO'] : '/';
+	$path = '/';
+	if (!empty($_SERVER['PATH_INFO'])) {
+		$path = $_SERVER['PATH_INFO'];
+	}
+	else if (!empty($_SERVER['ORIG_PATH_INFO'])) {
+		$path = $_SERVER['ORIG_PATH_INFO'];
+	}
 	$path = substr($path, 1); #chop the lead slash
 	list($username, $collection, $id) = explode('/', $path.'//');
 
