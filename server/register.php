@@ -52,73 +52,157 @@
 		exit;
 	}
 	
+	function verify_user($url_user, $authdb)
+	{
+		$auth_user = array_key_exists('PHP_AUTH_USER', $_SERVER) ? $_SERVER['PHP_AUTH_USER'] : null;
+		$auth_pw = array_key_exists('PHP_AUTH_PW', $_SERVER) ? $_SERVER['PHP_AUTH_PW'] : null;
+	
+		if (is_null($auth_user) || is_null($auth_pw)) 
+		{
+			/* CGI/FCGI auth workarounds */
+			$auth_str = null;
+			if (array_key_exists('Authorization', $_SERVER))
+				/* Standard fastcgi configuration */
+				$auth_str = $_SERVER['Authorization'];
+			else if (array_key_exists('AUTHORIZATION', $_SERVER))
+				/* Alternate fastcgi configuration */
+				$auth_str = $_SERVER['AUTHORIZATION'];
+			else if (array_key_exists('HTTP_AUTHORIZATION', $_SERVER))
+				/* IIS/ISAPI and newer (yet to be released) fastcgi */
+				$auth_str = $_SERVER['HTTP_AUTHORIZATION'];
+			else if (array_key_exists('REDIRECT_HTTP_AUTHORIZATION', $_SERVER))
+				/* mod_rewrite - per-directory internal redirect */
+				$auth_str = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+			if (!is_null($auth_str)) 
+			{
+				/* Basic base64 auth string */
+				if (preg_match('/Basic\s+(.*)$/', $auth_str)) 
+				{
+					$auth_str = substr($auth_str, 6);
+					$auth_str = base64_decode($auth_str, true);
+					if ($auth_str != FALSE) {
+						$tmp = explode(':', $auth_str);
+						if (count($tmp) == 2) 
+						{
+							$auth_user = $tmp[0];
+							$auth_pw = $tmp[1];
+						}
+					}
+				}
+			}
+		}
+
+		if ($auth_user != $url_user)
+			report_problem("5", 400);
+
+		if (!$authdb->authenticate_user($auth_user, $auth_pw))
+			report_problem('Authentication failed', '401');
+
+		return 1;
+	}
 	
 	$path = array_key_exists('PATH_INFO', $_SERVER) ? $_SERVER['PATH_INFO'] : '/';
 	$path = substr($path, 1); #chop the lead slash
-	list($action, $info) = explode('/', $path.'/');
+	list($url_user, $action) = explode('/', $path.'/');
+
+	if (!$url_user)
+		report_problem('3', 400);
 	
-
- 	$username = array_key_exists('uid', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['uid']) : $_POST['uid']) : null;
-	$password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
-
+	if (!$action)
+		$action = 'none';
 
 	try
 	{
 		$authdb = get_auth_object();
-		$storagedb = get_storage_write_object($username, null, 1);
 		
-		switch($action)
+		if ($_SERVER['REQUEST_METHOD'] == 'GET')
 		{
-			case 'location':
-				print json_encode($authdb->get_user_location($info) ? 1: 0);
-				exit;
-			case 'check':
-				print json_encode($authdb->user_exists($info) ? 1: 0);
-				exit;
-			case 'chpwd':
-				$new_password = array_key_exists('new', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['new']) : $_POST['new']) : null;
-				if (!$authdb->authenticate_user($username, $password))
+			switch($action)
+			{
+				case 'cluster':
+					print json_encode(defined(WEAVE_STORAGE_LOCATION) ? WEAVE_STORAGE_LOCATION : $authdb->get_user_location($url_user));
+					exit;
+				case 'none':
+					print json_encode($authdb->user_exists($url_user) ? 1: 0);
+					exit;
+				case 'email':
+					verify_user($url_user, $authdb);					
+					print json_encode($authdb->get_user_email($url_user));
+					exit;
+				default:
+					report_problem("1", 400);
+			}
+		}
+		else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #add a single record to the server
+		{
+			if ($action == 'none')
+			{
+				if (REGISTER_USE_CAPTCHA)
 				{
-					report_problem('Authentication failed', '401');
+					require_once 'recaptcha.php';
+					$challenge = array_key_exists('captcha-challenge', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['captcha-challenge']) : $_POST['captcha-challenge']) : null;
+					$response = array_key_exists('captcha-response', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['captcha-response']) : $_POST['captcha-response']) : null;
+					if (!$challenge || !$response)
+						report_problem("2", 400);
+					
+					$captcha_check = recaptcha_check_answer(CAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'], $challenge, $response);
+					if (!$captcha_check->is_valid)
+						report_problem("2", 400);
 				}
-				$authdb->update_password($username, $new);
-				break;
-			case 'new':
-				if ($_SERVER['REQUEST_METHOD'] == 'GET')
+
+				if (!preg_match('/^[A-Z0-9._-]+/i', $url_user)) 
+					report_problem("3", 400);
+
+				if ($authdb->user_exists($url_user))
+					report_problem("4", 400);
+
+				$password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
+				if (!$password || $password == $url_user || strlen($password) < 8) #basic password checking
 				{
-					if (WEAVE_REGISTER_USE_CAPTCHA)
-					{
-						require_once 'captcha.inc';
-						print captcha_html();
-					}
+					report_problem("7", 400);
 				}
-				else
+				
+				$email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
+				$storagedb->create_user($url_user, $password);
+				$authdb->create_user($url_user, $password, $email);
+			}
+			else #everything else requires you to be logged in
+			{
+				verify_user($url_user, $authdb);
+				
+				#set an X-Weave-Alert header if the user needs to know something
+				if ($alert = $authdb->get_user_alert())
+					header("X-Weave-Alert: $alert", false);
+
+				switch($action)
 				{
-					if (WEAVE_REGISTER_USE_CAPTCHA)
-					{
-						require_once 'captcha.inc';
- 						$challenge = array_key_exists('recaptcha_challenge_field', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['recaptcha_challenge_field']) : $_POST['recaptcha_challenge_field']) : null;
-						$response = array_key_exists('recaptcha_response_field', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['recaptcha_response_field']) : $_POST['recaptcha_response_field']) : null;
-						if (!captcha_verify)
-						{
-							report_problem("2", 400);
-						}
-					}
-					if (!preg_match('/^[A-Z0-9._-]+/i', $username)) 
-					{
-						report_problem("3", 400);
-					}
-					if ($authdb->user_exists($username))
-					{
-						report_problem("4", 400);
-					}
-					$email = array_key_exists('mail', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['mail']) : $_POST['mail']) : null;
-					$storagedb->create_user($username, $password);
-					$authdb->create_user($username, $password, $email);
+					case 'password':
+						$new_password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
+						if (!verify_password_strength($url_user, $new_password))
+							report_problem("Bad password", 400);
+						
+						$authdb->update_password($url_user, $new_password);
+						break;
+					case 'email':
+						$new_email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
+						$authdb->update_password($url_user, $new_email);
+						break;
+					default:
+						report_problem("1", 400);
 				}
-				break;
-			default:
-				report_problem("1", 400);
+			}
+			
+	
+	
+		}
+		else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') #delete a user from the server. Need to delete their storage as well.
+		{
+			verify_user($url_user, $authdb);
+			
+			$storagedb = get_storage_write_object($auth_user, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+
+			$authdb->delete_user($auth_user);
+			$storagedb->delete_user();
 		}
 	}
 	catch(Exception $e)

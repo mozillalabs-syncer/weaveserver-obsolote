@@ -102,6 +102,9 @@ if (!defined('WEAVE_SHARE_DBH')) { define('WEAVE_SHARE_DBH', 0); }
 #The maximum size of a payload (set to 0 for unlimited) in bytes. Watch out for large characters!
 if (!defined('WEAVE_PAYLOAD_MAX_SIZE')) { define('WEAVE_PAYLOAD_MAX_SIZE', 262144); } #256K
 
+#The maximum quota per user in K (not really used yet)
+if (!defined('WEAVE_QUOTA')) { define('WEAVE_QUOTA', 5000); } #5M
+
 #A default username and password, useful for testing suites and the heartbeat
 if (!defined('WEAVE_DEFAULT_TEST_USERNAME')) { define('WEAVE_DEFAULT_TEST_USERNAME', 'testuser'); }
 if (!defined('WEAVE_DEFAULT_TEST_PASSWORD')) { define('WEAVE_DEFAULT_TEST_PASSWORD', 'testpass'); }
