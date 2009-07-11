@@ -51,6 +51,14 @@
 		echo json_encode($message);
 		exit;
 	}
+
+	function verify_password_strength($password, $user)
+	{
+		if (!$password || $password == $user || strlen($password) < 8) #basic password checking
+				return 0;
+		return 1;
+
+	}
 	
 	function verify_user($url_user, $authdb)
 	{
@@ -107,7 +115,7 @@
 
 	if (!$url_user)
 		report_problem('3', 400);
-	
+
 	if (!$action)
 		$action = 'none';
 
@@ -120,8 +128,11 @@
 			switch($action)
 			{
 				case 'cluster':
-					print json_encode(defined(WEAVE_STORAGE_LOCATION) ? WEAVE_STORAGE_LOCATION : $authdb->get_user_location($url_user));
-					exit;
+					if (defined(WEAVE_STORAGE_LOCATION))
+						exit(json_encode(WEAVE_STORAGE_LOCATION));
+					if ($location = $authdb->get_user_location($url_user))
+						exit(json_encode($location));					
+					report_problem("No location", 404);
 				case 'none':
 					print json_encode($authdb->user_exists($url_user) ? 1: 0);
 					exit;
@@ -137,7 +148,7 @@
 		{
 			if ($action == 'none')
 			{
-				if (REGISTER_USE_CAPTCHA)
+				if (WEAVE_REGISTER_USE_CAPTCHA)
 				{
 					require_once 'recaptcha.php';
 					$challenge = array_key_exists('captcha-challenge', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['captcha-challenge']) : $_POST['captcha-challenge']) : null;
@@ -156,15 +167,31 @@
 				if ($authdb->user_exists($url_user))
 					report_problem("4", 400);
 
-				$password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
-				if (!$password || $password == $url_user || strlen($password) < 8) #basic password checking
+
+				$putdata = fopen("php://input", "r");
+				$jsonstring = '';
+				while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
+				$json = json_decode($jsonstring, true);
+
+				$password = $json['password'];
+				$email = $json['email'];
+
+				if (!verify_password_strength($password, $url_user))
 				{
-					report_problem("7", 400);
+					report_problem("Bad password", 400);
 				}
 				
-				$email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
-				$storagedb->create_user($url_user, $password);
-				$authdb->create_user($url_user, $password, $email);
+				try
+				{
+					$storagedb = get_storage_write_object($url_user, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+					$storagedb->create_user($url_user, $password);
+					$authdb->create_user($url_user, $password, $email);
+				}
+				catch(Exception $e)
+				{
+					report_problem($e->getMessage(), $e->getCode());
+				}
+				exit(json_encode($url_user));
 			}
 			else #everything else requires you to be logged in
 			{
@@ -177,15 +204,15 @@
 				switch($action)
 				{
 					case 'password':
-						$new_password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
-						if (!verify_password_strength($url_user, $new_password))
+						$new_password = file_get_contents("php://input");
+						if (!verify_password_strength($new_password, $url_user))
 							report_problem("Bad password", 400);
 						
 						$authdb->update_password($url_user, $new_password);
 						break;
 					case 'email':
-						$new_email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
-						$authdb->update_password($url_user, $new_email);
+						$new_email = file_get_contents("php://input");
+						$authdb->update_email($url_user, $new_email);
 						break;
 					default:
 						report_problem("1", 400);
@@ -198,11 +225,18 @@
 		else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') #delete a user from the server. Need to delete their storage as well.
 		{
 			verify_user($url_user, $authdb);
-			
-			$storagedb = get_storage_write_object($auth_user, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
 
-			$authdb->delete_user($auth_user);
-			$storagedb->delete_user();
+			$storagedb = get_storage_write_object($url_user, WEAVE_SHARE_DBH ? $authdb->get_connection() : null);	
+
+			try
+			{
+				$authdb->delete_user($url_user);
+				$storagedb->delete_user();
+			}
+			catch(Exception $e)
+			{
+				report_problem($e->getMessage(), $e->getCode());
+			}
 		}
 	}
 	catch(Exception $e)
