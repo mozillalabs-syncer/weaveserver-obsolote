@@ -125,12 +125,15 @@
 	if (!$collection && $_SERVER['REQUEST_METHOD'] != 'GET')
 		report_problem("1", 400);
 
+	#Lowercase the username. That way, we can do case-insensitivity across all systems
 
+	$username = strtolower($username);
+	
 	#Auth the user
 	try 
 	{
 		$authdb = get_auth_object();
-		if (!$authdb->authenticate_user($auth_user, $auth_pw))
+		if (!$authdb->authenticate_user(strtolower($auth_user), $auth_pw))
 			report_problem('Authentication failed', '401');
 	}
 	catch(Exception $e)

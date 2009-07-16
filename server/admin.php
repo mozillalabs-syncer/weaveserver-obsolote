@@ -69,7 +69,9 @@
 	$password = array_key_exists('pass', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['pass']) : $_POST['pass']) : null;
 	$email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
 
-
+	#lowercase the username. Weave does case insensitivity this way (lowercasing throughout)
+	$username = strtolower($username);
+	
 	try
 	{
 		$authdb = get_auth_object();
