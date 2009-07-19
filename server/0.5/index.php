@@ -115,6 +115,10 @@
 	$path = substr($path, 1); #chop the lead slash
 	list($username, $function, $collection, $id) = explode('/', $path.'//');
 
+	# Lowercase username before checking path
+	$username = strtolower($username);
+	$auth_user = strtolower($auth_user);
+	
 	if (!$username)
 		report_problem('3', 400);
 
@@ -132,10 +136,6 @@
 	#storage requires a collection to have been passed in. Info requires a directive
 	if (!$collection)
 		report_problem("1", 400);
-
-	#Lowercase the username. That way, we can do case-insensitivity across all systems
-
-	$username = strtolower($username);
 
 	#Auth the user
 	try 

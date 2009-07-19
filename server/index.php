@@ -115,6 +115,10 @@
 	$path = substr($path, 1); #chop the lead slash
 	list($username, $collection, $id) = explode('/', $path.'//');
 
+	# Lowercase username before checking path
+	$username = strtolower($username);
+	$auth_user = strtolower($auth_user);
+	
 	if (!$username)
 		report_problem('3', 400);
 
@@ -124,10 +128,6 @@
 	#only a get has meaning without a collection (GET returns a collection list)
 	if (!$collection && $_SERVER['REQUEST_METHOD'] != 'GET')
 		report_problem("1", 400);
-
-	#Lowercase the username. That way, we can do case-insensitivity across all systems
-
-	$username = strtolower($username);
 	
 	#Auth the user
 	try 
