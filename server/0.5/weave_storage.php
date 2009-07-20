@@ -354,7 +354,7 @@ class WeaveStorageMysql implements WeaveStorage
 		}
 		
 		# Don't modify the timestamp on a depth-only change. It's purely for sorting trees.
-		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
+		if ($wbo->parentid_exists() || $wbo->payload_exists()) 
 		{
 			#better make sure we have a modified date. Should have been handled earlier
 			if (!$wbo->modified_exists())
@@ -867,7 +867,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		}
 
 		# Don't modify the timestamp on a depth-only change
-		if ($wbo->parentid_exists() || $wbo->sortindex_exists() || $wbo->payload_exists()) 
+		if ($wbo->parentid_exists() || $wbo->payload_exists()) 
 		{
 			#better make sure we have a modified date. Should have been handled earlier
 			if (!$wbo->modified_exists())

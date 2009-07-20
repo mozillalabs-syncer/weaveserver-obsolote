@@ -100,6 +100,8 @@
 			}
 		}
 
+		$auth_user = strtolower($auth_user);
+		
 		if ($auth_user != $url_user)
 			report_problem("5", 400);
 
@@ -113,6 +115,8 @@
 	$path = substr($path, 1); #chop the lead slash
 	list($url_user, $action) = explode('/', $path.'/');
 
+	$url_user = strtolower($url_user);
+	
 	if (!$url_user)
 		report_problem('3', 400);
 

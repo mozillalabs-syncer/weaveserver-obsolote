@@ -133,7 +133,7 @@
 	try 
 	{
 		$authdb = get_auth_object();
-		if (!$authdb->authenticate_user(strtolower($auth_user), $auth_pw))
+		if (!$authdb->authenticate_user($auth_user, $auth_pw))
 			report_problem('Authentication failed', '401');
 	}
 	catch(Exception $e)
