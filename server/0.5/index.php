@@ -199,12 +199,21 @@
 			{
 				$full = array_key_exists('full', $_GET) ? $_GET['full'] : null;
 				$outputter = new WBOJsonOutput($full);
-				if (array_key_exists('HTTP_ACCEPT', $_SERVER) 
-					&& !preg_match('/application\/json/', $_SERVER['HTTP_ACCEPT'])
-					&& preg_match('/application\/newlines/', $_SERVER['HTTP_ACCEPT']))
+				if (array_key_exists('HTTP_ACCEPT', $_SERVER)
+					&& !preg_match('/\*\/\*/', $_SERVER['HTTP_ACCEPT'])
+					&& !preg_match('/application\/json/', $_SERVER['HTTP_ACCEPT']))
 				{
-					header("Content-type: application/text");
-					$outputter->set_format('newlines');
+					if (preg_match('/application\/whoisi/', $_SERVER['HTTP_ACCEPT']))
+					{
+						header("Content-type: application/text");
+						$outputter->set_format('whoisi');
+					}
+					elseif (preg_match('/application\/newlines/', $_SERVER['HTTP_ACCEPT']))
+					{
+						header("Content-type: application/text");
+						$outputter->set_format('newlines');
+					}
+					
 				}
 	
 				try 
@@ -438,6 +447,10 @@ class WBOJsonOutput
 		{
 			return $this->output_newlines($sth);
 		}
+		elseif ($this->_output_format == 'whoisi')
+		{
+			return $this->output_whoisi($sth);
+		}
 		else
 		{
 			return $this->output_json($sth);
@@ -465,6 +478,23 @@ class WBOJsonOutput
 		return 1;
 	}
 
+	function output_whoisi($sth)
+	{		
+		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
+		{
+			if ($this->_full)
+			{
+				$wbo = new wbo();
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				$output = $wbo->json();
+			}
+			else
+				$output = json_encode($result{'id'});
+			echo strlen($output) . "\n" . $output;
+		}
+		return 1;
+	}
+
 	function output_newlines($sth)
 	{		
 		while ($result = $sth->fetch(PDO::FETCH_ASSOC))
@@ -473,7 +503,7 @@ class WBOJsonOutput
 			{
 				$wbo = new wbo();
 				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
-				echo preg_replace('/\n/', chr(11), $wbo->json());
+				echo preg_replace('/\n/', '\u000a', $wbo->json());
 			}
 			else
 				echo json_encode($result{'id'});
