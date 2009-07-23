@@ -51,7 +51,7 @@ class wbo
 		$extracted = is_string($json) ? json_decode($json, true) : $json;
 
 		#need to check the json was valid here...
-		if (!$extracted)
+		if ($extracted === null)
 		{
 			$this->_error[] = "unable to extract from json";
 			return 0;

@@ -292,7 +292,7 @@
 		while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
 		$json = json_decode($jsonstring, true);
 
-		if (!$json)
+		if ($json === null)
 			report_problem("6", 400);
 
 		#now need the db connection
