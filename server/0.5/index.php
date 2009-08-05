@@ -38,10 +38,10 @@
 #
 # ***** END LICENSE BLOCK *****
 
+	require_once 'weave_constants.php';
 	require_once 'weave_storage.php';
 	require_once 'weave_authentication.php';
 	require_once 'weave_basic_object.php';
-	require_once 'weave_constants.php';
 
 	function report_problem($message, $code = 503)
 	{
@@ -443,6 +443,10 @@ class WBOJsonOutput
 	
 	function output($sth)
 	{
+		if (($rowcount = $sth->rowCount()) > 0)
+		{
+			header('X-Weave-Records: ' . $rowcount);
+		}
 		if ($this->_output_format == 'newlines')
 		{
 			return $this->output_newlines($sth);

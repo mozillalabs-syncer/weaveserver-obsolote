@@ -37,8 +37,9 @@
 #
 # ***** END LICENSE BLOCK *****
 	
-require_once 'weave_basic_object.php';
 require_once 'weave_constants.php';
+require_once 'weave_basic_object.php';
+
 
 
 #Returns the storage object. Takes three arguments
@@ -144,6 +145,7 @@ class WeaveStorageMysql implements WeaveStorage
 	private $_username;
 	private $_type = 'read';
 	private $_dbh;
+	private $_db_name = 'wbo';
 	
 	function __construct($username, $dbh = null) 
 	{
@@ -161,6 +163,9 @@ class WeaveStorageMysql implements WeaveStorage
 			$this->_type = 'write';
 			$this->open_connection();
 		}
+		
+		if (defined('WEAVE_MYSQL_STORE_TABLE_NAME'))
+			$this->_db_name = WEAVE_MYSQL_STORE_TABLE_NAME;
 		#otherwise we do nothing with the connection and wait for it to be directly opened
 	}
 
@@ -221,7 +226,7 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		try
 		{
-			$select_stmt = 'select max(modified) from wbo where username = :username and collection = :collection';
+			$select_stmt = 'select max(modified) from ' . $this->_db_name . ' where username = :username and collection = :collection';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->bindParam(':collection', $collection);
@@ -241,7 +246,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{		
 		try
 		{
-			$select_stmt = 'select distinct(collection) from wbo where username = :username';
+			$select_stmt = 'select distinct(collection) from ' . $this->_db_name . ' where username = :username';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->execute();
@@ -266,7 +271,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		try
 		{
-			$select_stmt = 'select collection, max(modified) as timestamp from wbo where username = :username group by collection';
+			$select_stmt = 'select collection, max(modified) as timestamp from ' . $this->_db_name . ' where username = :username group by collection';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->execute();
@@ -292,7 +297,7 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'replace into wbo (username, id, collection, parentid, depth, sortindex, modified, payload) 
+			$insert_stmt = 'replace into ' . $this->_db_name . ' (username, id, collection, parentid, depth, sortindex, modified, payload) 
 					values (:username, :id, :collection, :parentid, :depth, :sortindex, :modified, :payload)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $this->_username);
@@ -316,7 +321,7 @@ class WeaveStorageMysql implements WeaveStorage
 	
 	function update_object(&$wbo)
 	{
-		$update = "update wbo set ";
+		$update = 'update ' . $this->_db_name . ' set ';
 		$params = array();
 		$update_list = array();
 		
@@ -395,7 +400,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		try
 		{
-			$delete_stmt = 'delete from wbo where username = :username and collection = :collection and id = :id';
+			$delete_stmt = 'delete from ' . $this->_db_name . ' where username = :username and collection = :collection and id = :id';
 			$sth = $this->_dbh->prepare($delete_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->bindParam(':collection', $collection);
@@ -415,7 +420,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		$params = array();
 		
-		$select_stmt = "delete from wbo where username = ? and collection = ?";
+		$select_stmt = 'delete from ' . $this->_db_name . ' where username = ? and collection = ?';
 		$params[] = $this->_username;
 		$params[] = $collection;
 		
@@ -487,7 +492,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		try
 		{
-			$select_stmt = 'select * from wbo where username = :username and collection = :collection and id = :id';
+			$select_stmt = 'select * from ' . $this->_db_name . ' where username = :username and collection = :collection and id = :id';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->bindParam(':collection', $collection);
@@ -512,7 +517,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		$full_list = $full ? '*' : 'id';
 		
-		$select_stmt = "select $full_list from wbo where username = ? and collection = ?";
+		$select_stmt = "select $full_list from " . $this->_db_name . ' where username = ? and collection = ?';
 		$params[] = $this->_username;
 		$params[] = $collection;
 		
@@ -577,7 +582,6 @@ class WeaveStorageMysql implements WeaveStorage
 			error_log("retrieve_collection: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
-
 		if ($direct_output)
 			return $direct_output->output($sth);
 
@@ -600,7 +604,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		try
 		{
-			$select_stmt = 'select round(sum(length(payload))/1024) from wbo where username = :username';
+			$select_stmt = 'select round(sum(length(payload))/1024) from ' . $this->_db_name . ' where username = :username';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->execute();
@@ -628,7 +632,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		try
 		{
-			$delete_stmt = 'delete from wbo where username = :username';
+			$delete_stmt = 'delete from ' . $this->_db_name . ' where username = :username';
 			$sth = $this->_dbh->prepare($delete_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->execute();
