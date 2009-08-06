@@ -67,30 +67,10 @@ interface WeaveAuthentication
 	function open_connection();
 
 	function get_connection();
-	
-	function create_user($username, $password, $email = "");
-	
-	function update_password($username, $password);
-
-	function update_email($username, $email = "");
-
-	function update_location($username, $location);
-
-	function user_exists($username);
 
 	function authenticate_user($username, $password);
 
-	function update_status($username, $status);
-
-	function update_alert($username, $status);
-
 	function get_user_alert();
-
-	function get_user_location($username);
-	
-	function get_user_email($username);
-	
-	function delete_user($username);
 }
 
 #Dummy object for no-auth and .htaccess setups
@@ -110,65 +90,16 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 		return null;
 	}
 	
-	function create_user($username, $password, $email = "")
-	{
-		return 1;
-	}
-	
-	function get_user_location($username)
-	{
-		return 0;
-	}
-
-	function update_password($username, $password)
-	{
-		return 1;
-	}
-
-	function update_email($username, $email = "")
-	{
-		return 1;
-	}
-
-	function update_location($username, $location)
-	{
-		return 1;
-	}
-
 	function authenticate_user($username, $password)
 	{
 		return 1;
 	}
 	
-	function update_status($username, $status)
-	{
-		return 1;
-	}
-
-	function update_alert($username, $alert)
-	{
-		return 1;
-	}
-
 	function get_user_alert()
 	{
 		return "";
 	}
 
-	function get_user_email($username)
-	{
-		return "";
-	}
-
-	function delete_user($username)
-	{
-		return 1;
-	}
-	
-	function user_exists($username)
-	{
-		return 0;
-	}
 }
 
 
@@ -177,16 +108,6 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 #Mysql version of the above.
 #Note that this object does not contain any database setup information. It assumes that the mysql
 #instance is already fully configured
-
-#
-#create table users
-#(
-# username varchar(32),
-# md5_pass varchar(32),
-# email varchar(64),
-# location text,
-#) engine=InnoDB;
-#
 
 class WeaveAuthenticationMysql implements WeaveAuthentication
 {
@@ -234,138 +155,6 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		return $this->_dbh;
 	}
 
-	function create_user($username, $password, $email = "")
-	{ 
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-		if (!$password)
-		{
-			throw new Exception("7", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'insert into users (username, md5, email, status) values (:username, :md5, :email, 1)';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':md5', md5($password));
-			$sth->bindParam(':email', $email);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("create_user: " . $exception->getMessage());
-			#check for primary key violation here...
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	}
-
-	function update_password($username, $password)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-		if (!$password)
-		{
-			throw new Exception("7", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set md5 = :md5 where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':md5', md5($password));
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("3", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_password: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	
-	}
-
-	function update_email($username, $email = "")
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set email = :email where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':email', $email);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_email: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	
-	}
-
-	function update_location($username, $location)
-	{
-		if (!$username || !$location)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set location = :location where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':location', $location);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_location: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	
-	}
-
-	function user_exists($username) 
-	{
-		try
-		{
-			$select_stmt = 'select count(*) from users where username = :username';
-			$sth = $this->_dbh->prepare($select_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("user_exists: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-
-		$result = $sth->fetchColumn();
-		return $result;
-	}
 
 	function authenticate_user($username, $password) #auth user may be different from user, so need the username here
 	{
@@ -392,147 +181,12 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		return $result['status'];
 	}
 
-	function update_status($username, $status)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set status = :status where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':status', $status);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_status: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-		
-	}
-
-	function update_alert($username, $alert)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set alert = :alert where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':alert', $alert);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_alert: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-		
-	}
 	
 	function get_user_alert()
 	{
 		return $this->_alert;
 	}
 	
-	function get_user_location($username)
-	{
-		try
-		{
-			$select_stmt = 'select location from users where username = :username';
-			$sth = $this->_dbh->prepare($select_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("get_user_location: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-
-		$result = $sth->fetchColumn();
-		return $result;
-	}
-
-	function get_user_email($username)
-	{
-		try
-		{
-			$select_stmt = 'select email from users where username = :username';
-			$sth = $this->_dbh->prepare($select_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("get_user_email: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-
-		$result = $sth->fetchColumn();
-		return $result ? $result : "";
-	}
-
-	function delete_user($username) 
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$delete_stmt = 'delete from wbo where username = :username';
-			$sth = $this->_dbh->prepare($delete_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-
-			$delete_stmt = 'delete from users where username = :username';
-			$sth = $this->_dbh->prepare($delete_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-
-		}
-		catch( PDOException $exception )
-		{
-			error_log("delete_user: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	}
-
-	function create_user_table()
-	{
-		try
-		{
-			$create_statement = "create table users (username varchar(32) primary key, md5 varchar(32), email varchar(64), status tinyint default 1, alert text) engine=InnoDB";
-		
-			$sth = $this->_dbh->prepare($create_statement);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("create_user_table:" . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		
-	}
 }
 
 
@@ -582,123 +236,6 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	}
 
 
-	#Don't forget to tell the storage object to initialize the user db (preferably first)!
-	function create_user($username, $password, $email = "")
-	{ 
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-		if (!$password)
-		{
-			throw new Exception("7", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'insert into users (username, md5, email, status) values (:username, :md5, :email, 1)';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':md5', md5($password));
-			$sth->bindParam(':email', $email);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("create_user: " . $exception->getMessage());
-			#need to add a subcatch here for user already existing
-			throw new Exception("Database unavailable", 503);
-		}
-		
-		
-		return 1;
-	}
-
-	function update_password($username, $password)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-		if (!$password)
-		{
-			throw new Exception("7", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set md5 = :md5 where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':md5', md5($password));
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}			
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_password: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	
-	}
-
-	function update_email($username, $email = "")
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set email = :email where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':email', $email);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_email: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	
-	}
-
-	function update_location($username, $location)
-	{
-		if (!$username || !$location)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set location = :location where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':location', $location);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_location: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	
-	}
-
 	function authenticate_user($username, $password) 
 	{
 		try
@@ -723,162 +260,11 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		$this->_alert = $result['alert'];
 		return $result['status'];
 	}
-	
-
-	function update_status($username, $status)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set status = :status where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':status', $status);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_status: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-		
-	}
-
-	function update_alert($username, $alert)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$insert_stmt = 'update users set alert = :alert where username = :username';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->bindParam(':alert', $alert);
-			if ($sth->execute() == 0)
-			{
-				throw new Exception("User not found", 404);
-			}
-		}
-		catch( PDOException $exception )
-		{
-			error_log("update_alert: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-		
-	}
 	function get_user_alert()
 	{
 		return $this->_alert;
 	}
 	
-	function get_user_location($username)
-	{
-		try
-		{
-			$select_stmt = 'select location from users where username = :username';
-			$sth = $this->_dbh->prepare($select_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("get_user_location: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-
-		$result = $sth->fetchColumn();
-		return $result;
-	}
-
-	function get_user_email($username)
-	{
-		try
-		{
-			$select_stmt = 'select email from users where username = :username';
-			$sth = $this->_dbh->prepare($select_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("get_user_email: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-
-		$result = $sth->fetchColumn();
-		return $result ? $result : "";
-	}
-
-	function user_exists($username) 
-	{
-		try
-		{
-			$select_stmt = 'select count(*) from users where username = :username';
-			$sth = $this->_dbh->prepare($select_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("user_exists: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-
-		$result = $sth->fetchColumn();
-		return $result ? 1 : 0;
-	}
-	
-	function delete_user($username)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-
-		try
-		{
-			$delete_stmt = 'delete from users where username = :username';
-			$sth = $this->_dbh->prepare($delete_stmt);
-			$sth->bindParam(':username', $username);
-			$sth->execute();
-
-		}
-		catch( PDOException $exception )
-		{
-			error_log("delete_user: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		return 1;
-	}
-
-	function create_user_table()
-	{
-		try
-		{
-			$create_statement = "create table users (username text primary key, md5 text, email text, status integer, alert text)";
-		
-			$sth = $this->_dbh->prepare($create_statement);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("create_user_table:" . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		
-	}
 }
 
 # LDAP version of Authentication
@@ -886,11 +272,6 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 {
 	var $_conn;
 	var $_alert;
-	
-	private function generateSSHAPassword($password) {
-	    return exec('/usr/sbin/slappasswd2.4 -h {SSHA} -s '.
-	      escapeshellarg($password));
-	}
 	
 	private function authorize() {
 		if (!ldap_bind($this->_conn, WEAVE_LDAP_AUTH_USER.",".
@@ -949,83 +330,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	{
 		return $this->_conn;
 	}
-  
-	function create_user($username, $password, $email = "")
-	{
-		$this->authorize();
-
-		$dn = $this->constructUserDN($username);
-		$key = sha1(mt_rand().$username);
-
-		$record = array(
-			'cn' => $username,
-			'sn' => $username,
-			'primaryNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
-			'rescueNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
-			'uid' => $username,
-			'userPassword' => $this->generateSSHAPassword($password),
-			'mail-verified' => $key,
-			'account-enabled' => 'Yes',
-			'mail' => $email,
-			'objectClass' => array('dataStore', 'inetOrgPerson')
-		);
-		
-		return ldap_add($this->_conn, $dn, $record);
-	}
-	
-	function get_user_location($username)
-	{
-		return 0;
-	}
-
-	function get_user_email($username)
-	{
-		return "";
-	}
-
-	function update_password($username, $password)
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-		if (!$password)
-		{
-			throw new Exception("7", 404);
-		}
-		$this->authorize();
-		
-		$dn = $this->constructUserDN($username);
-		$nP = array('userPassword' => $this->generateSSHAPassword($password));
-		
-		if (!ldap_mod_replace($this->_conn, $dn, $nP)) {
-		  throw new Exception("Could not change password!", 503);
-		}
-		return 1;
-	}
-
-	function update_email($username, $email = "")
-	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-		$this->authorize();
-		
-		$dn = $this->constructUserDN($username);
-		$nE = array('mail' => $email);
-		
-		if (!ldap_mod_replace($this->_conn, $dn, $nE)) {
-		  throw new Exception("Could not update email!", 503);
-		}
-		return 1;
-	}
-	
-	function update_location($username, $location)
-	{
-		return 0;
-	}
-	
+ 	
 	function authenticate_user($username, $password)
 	{
 		$dn = $this->constructUserDN($username);
@@ -1036,36 +341,11 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	}
 
 
-	function update_status($username, $status)
-	{
-		return 1;
-	}
-
-	function update_alert($username, $alert)
-	{
-		return 1;
-		
-	}
 	function get_user_alert()
 	{
 		return $this->_alert;
 	}
 	
-	function delete_user($username)
-	{
-		$this->authorize();
-		$dn = $this->constructUserDN($username);
-		return ldap_delete($this->_conn, $dn);
-	}
-	
-	function user_exists($username)
-	{
-		$this->authorize();
-		$search = ldap_search($this->_conn, WEAVE_LDAP_AUTH_DN,
-					"(".WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$username)");
-					
-		return ldap_count_entries($this->_conn, $search);
-	}
 }
 
 ?>

@@ -37,7 +37,8 @@
 #
 # ***** END LICENSE BLOCK *****
 	
-require_once 'weave_constants.php';
+require_once 'weave_user.php';
+require_once 'weave_user_constants.php';
 
 
 #Truncated version of the weave_storage object used by the api

@@ -37,9 +37,9 @@
 #
 # ***** END LICENSE BLOCK *****
 
-	require_once 'weave_authentication.php';
+	require_once 'weave_user_constants.php';
 	require_once 'weave_storage.php';
-	require_once 'weave_constants.php';
+	require_once 'weave_user.php';
 
 	function report_problem($message, $code = 503)
 	{
@@ -183,7 +183,6 @@
 				$jsonstring = '';
 				while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
 				$json = json_decode($jsonstring, true);
-
 				$password = $json['password'];
 				$email = $json['email'];
 

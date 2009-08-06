@@ -85,6 +85,9 @@ elseif (WEAVE_AUTH_ENGINE == 'sqlite')
 	if (!defined('WEAVE_SQLITE_AUTH_DIRECTORY')) { define('WEAVE_SQLITE_AUTH_DIRECTORY', '/Library/WebServer/dbs'); }
 }
 
+#leave this blank unless you are setting up a multiple-node setup
+if (!defined('WEAVE_REGISTER_NODE')) { define('WEAVE_REGISTER_NODE', null); }
+
 #requires the server to use a captcha when creating new accounts
 if (!defined('WEAVE_REGISTER_USE_CAPTCHA')) { define('WEAVE_REGISTER_USE_CAPTCHA', 0); }
 if (!defined('RECAPTCHA_PUBLIC_KEY')) { define('RECAPTCHA_PUBLIC_KEY', '6LfWcwUAAAAAABnmLyhmgddYeJGdiRlo2MWSOpAl'); }
