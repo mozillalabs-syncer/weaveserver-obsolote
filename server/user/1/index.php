@@ -131,7 +131,7 @@
 		{
 			switch($action)
 			{
-				case 'chkWeaveNode':
+				case 'weaveNode':
 					if (defined(WEAVE_REGISTER_STORAGE_LOCATION))
 						exit(json_encode(WEAVE_REGISTER_STORAGE_LOCATION));
 					if ($location = $authdb->get_user_location($url_user))
@@ -223,7 +223,11 @@
 					case 'email':
 						$new_email = file_get_contents("php://input");
 						$authdb->update_email($url_user, $new_email);
-						break;
+						exit(json_encode($new_email));
+					case 'weaveNode':
+						$new_node = file_get_contents("php://input");
+						$authdb->update_location($url_user, $new_node);
+						exit(json_encode($new_node));
 					default:
 						report_problem("1", 400);
 				}
