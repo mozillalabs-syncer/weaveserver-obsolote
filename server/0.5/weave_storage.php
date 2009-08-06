@@ -163,10 +163,10 @@ class WeaveStorageMysql implements WeaveStorage
 			$this->_type = 'write';
 			$this->open_connection();
 		}
-		
+		#otherwise we do nothing with the connection and wait for it to be directly opened
+
 		if (defined('WEAVE_MYSQL_STORE_TABLE_NAME'))
 			$this->_db_name = WEAVE_MYSQL_STORE_TABLE_NAME;
-		#otherwise we do nothing with the connection and wait for it to be directly opened
 	}
 
 	function open_connection() 

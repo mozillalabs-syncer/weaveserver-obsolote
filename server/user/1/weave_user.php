@@ -247,12 +247,11 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, :location, 1)';
+			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, ' . (WEAVE_REGISTER_NODE ? WEAVE_REGISTER_NODE : '""') . ', 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
 			$sth->bindParam(':email', $email);
-			$sth->bindParam(':location', WEAVE_REGISTER_NODE);
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -597,12 +596,11 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, :location, 1)';
+			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, ' . (WEAVE_REGISTER_NODE ? WEAVE_REGISTER_NODE : '""') . ', 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
 			$sth->bindParam(':email', $email);
-			$sth->bindParam(':location', WEAVE_REGISTER_NODE);
 			$sth->execute();
 		}
 		catch( PDOException $exception )
