@@ -494,7 +494,7 @@ class WBOJsonOutput
 			}
 			else
 				$output = json_encode($result{'id'});
-			echo strlen($output) . "\n" . $output;
+			echo pack('l', mb_strlen($output, '8bit')) . $output;
 		}
 		return 1;
 	}
