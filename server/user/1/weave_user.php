@@ -887,18 +887,21 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	var $_conn;
 	var $_alert;
 	
-	private function generateSSHAPassword($password) {
-	    return exec('/usr/sbin/slappasswd2.4 -h {SSHA} -s '.
-	      escapeshellarg($password));
+	private function generateSSHAPassword($password)
+	{
+		return exec('/usr/sbin/slappasswd2.4 -h {SSHA} -s '.
+			escapeshellarg($password));
 	}
 	
-	private function authorize() {
+	private function authorize()
+	{
 		if (!ldap_bind($this->_conn, WEAVE_LDAP_AUTH_USER.",".
 			WEAVE_LDAP_AUTH_DN, WEAVE_LDAP_AUTH_PASS))
 			throw new Exception("Invalid LDAP Admin", 503);
 	}
 	
- 	private function constructUserDN($user) {
+ 	private function constructUserDN($user)
+	{
 		/* This is specific to our Weave cluster */
 		if (WEAVE_LDAP_AUTH_DN == "dc=mozilla") {
 			$md = md5($user);
@@ -914,6 +917,15 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		}
 		
 		return WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$user,".WEAVE_LDAP_AUTH_DN;
+	}
+	
+	private function getUserAttribute($user, $attr)
+	{
+		$this->authorize();
+		$dn = $this->constructUserDN($user);
+		$re = ldap_read($this->_conn, $dn, "objectClass=*", array($attr));
+		return ldap_get_attributes($this->_conn,
+			ldap_first_entry($this->_conn, $re));
 	}
 	
 	function __construct($conn = null)
@@ -975,12 +987,33 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	
 	function get_user_location($username)
 	{
-		return 0;
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+		
+		$va = $this->getUserAttribute($username, "primaryNode");
+		for ($i = 0; $i < $va["primaryNode"]["count"]; $i++)
+		{
+			$node = $va["primaryNode"][$i];
+			if (substr($node, 0, 6) == "weave:")
+				return substr($node, 6);
+		}
+		return false;
 	}
 
 	function get_user_email($username)
 	{
-		return "";
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+		
+		$va = $this->getUserAttribute($username, "email");
+		if ($va["email"]["count"] < 1)
+			return false;
+		else
+			return $va["email"][0];
 	}
 
 	function update_password($username, $password)
@@ -998,7 +1031,8 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		$dn = $this->constructUserDN($username);
 		$nP = array('userPassword' => $this->generateSSHAPassword($password));
 		
-		if (!ldap_mod_replace($this->_conn, $dn, $nP)) {
+		if (!ldap_mod_replace($this->_conn, $dn, $nP))
+		{
 		  throw new Exception("Could not change password!", 503);
 		}
 		return 1;
@@ -1023,7 +1057,26 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	
 	function update_location($username, $location)
 	{
-		return 0;
+		if (!$username)
+		{
+			throw new Exception("3", 404);
+		}
+		
+		$ex = $this->getUserAttribute($username, "primaryNode");
+		for ($i = 0; $i < $ex["primaryNode"]["count"]; $i++)
+		{
+			$node = $ex["primaryNode"][$i];
+			if (substr($node, 0, 6) == "weave:")
+				$ex["primaryNode"][$i] = "weave:".$location;
+		}
+		
+		if (!ldap_mod_replace($this->_conn,
+			$this->constructUserDN($username), $ex))
+		{
+			throw new Exception("Could not update location!", 503);
+		}
+		
+		return 1;
 	}
 	
 	function authenticate_user($username, $password)
