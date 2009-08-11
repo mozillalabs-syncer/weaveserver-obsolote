@@ -238,7 +238,12 @@
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') #delete a user from the server. Need to delete their storage as well.
 		{
-			verify_user($url_user, $authdb);
+			if (defined(WEAVE_REGISTER_ADMIN_SECRET) 
+					&& array_key_exists($_POST['secret'])
+					&& WEAVE_USER_ADMIN_SECRET != (ini_get('magic_quotes_gpc') ? stripslashes($_POST['secret']) : $_POST['secret']))
+			{
+				verify_user($url_user, $authdb);
+			}
 
 			$storagedb = get_storage_write_object($url_user);	
 

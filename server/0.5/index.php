@@ -104,6 +104,9 @@
 		}
 	}
 
+	$server_time = microtime(1)
+	header("X-Weave-Timestamp: " . $server_time);
+	
 	#Basic path extraction and validation. No point in going on if these are missing
 	$path = '/';
 	if (!empty($_SERVER['PATH_INFO'])) {
@@ -261,7 +264,7 @@
 		if (!$wbo->id() && $id) { $wbo->id($id); }
 		
 		$wbo->collection($collection);
-		$wbo->modified(microtime(1)); #current microtime
+		$wbo->modified($server_time); #current microtime
 
 		if ($wbo->validate())
 		{
@@ -313,7 +316,6 @@
 		$success_ids = array();
 		$failed_ids = array();
 		
-		$modified = microtime(1);
 		
 		try
 		{
@@ -334,7 +336,7 @@
 			}
 			
 			$wbo->collection($collection);
-			$wbo->modified($modified);
+			$wbo->modified($server_time);
 			
 
 			if ($wbo->validate())
@@ -365,7 +367,7 @@
 		}
 		$db->commit_transaction();
 		
-		echo json_encode(array('modified' => round($modified, 2), 'success' => $success_ids, 'failed' => $failed_ids));
+		echo json_encode(array('success' => $success_ids, 'failed' => $failed_ids));
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'DELETE')
 	{

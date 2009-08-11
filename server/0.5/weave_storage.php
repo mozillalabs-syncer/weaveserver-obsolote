@@ -620,7 +620,9 @@ class WeaveStorageMysql implements WeaveStorage
 	
 	function get_user_quota()
 	{
-		return WEAVE_QUOTA;
+		if defined('WEAVE_QUOTA')
+			return WEAVE_QUOTA;
+		return null;
 	}
 
 	function create_user()
