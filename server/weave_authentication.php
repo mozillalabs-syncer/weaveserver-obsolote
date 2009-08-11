@@ -869,25 +869,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	
 	function get_user_location($username)
 	{
-		if (!$username)
-		{
-			throw new Exception("3", 404);
-		}
-		$this->authorize();
-		
-		$dn = $this->constructUserDN($username);
-		$re = ldap_read($this->_conn, $dn, "objectClass=*", array("primaryNode"));
-		$va = ldap_get_attributes($this->_conn, 
-		  ldap_first_entry($this->_conn, $re));
-		
-    // Iterate and find the "weave:" prefix
-    for ($i = 0; $i < $va["primaryNode"]["count"]; $i++) {
-      $node = $va["primaryNode"][$i];
-      if (substr($node, 0, 6) == "weave:")
-        return substr($node, 6);
-    }
-    
-    return false;
+		return 0;
 	}
 
 	function update_password($username, $password)
