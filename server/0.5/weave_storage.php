@@ -487,10 +487,6 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$select_stmt .= " order by modified";
 		}
-		else if ($sort == 'depthindex')
-		{
-			$select_stmt .= " order by depth,sortindex";
-		}
 		
 		if ($limit)
 		{
@@ -1066,10 +1062,6 @@ class WeaveStorageSqlite implements WeaveStorage
 			{
 				$select_stmt .= " order by modified";
 			}
-			else if ($sort == 'depthindex')
-			{
-				$select_stmt .= " order by depth,sortindex";
-			}
 		
 			if ($limit)
 			{
@@ -1202,10 +1194,6 @@ class WeaveStorageSqlite implements WeaveStorage
 		else if ($sort == 'oldest')
 		{
 			$select_stmt .= " order by modified";
-		}
-		else if ($sort == 'depthindex')
-		{
-			$select_stmt .= " order by depth,sortindex";
 		}
 		
 		if ($limit)
