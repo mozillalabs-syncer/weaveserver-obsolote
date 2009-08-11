@@ -434,6 +434,14 @@ sub user_work
 		$timearray[21] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return record 4: $result\n" if $VERBOSE;
 		
+		# should return the user id record for #4, #5 and #6
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?ids=4,5,6";
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
+		$result = $ua->request($req)->content();
+		$timearray[21] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+		print "should return 4, 5 and 6: $result\n" if $VERBOSE;
+		
 		# should return about half the ids
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?newer=$halftime";
 		$req->authorization_basic($USERNAME, $PASSWORD);
@@ -474,6 +482,14 @@ sub user_work
 		$timearray[26] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "delete 2 items: $result\n" if $VERBOSE;
 		
+		#delete records 4 and 6
+		$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test?ids=4,6");
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
+		$result = $ua->request($req)->content();
+		$timearray[26] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+		print "delete ids 4 and 6: $result\n" if $VERBOSE;
+		
 		# should return about one-third the ids, less the two we deleted
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?parentid=1";
 		$req->authorization_basic($USERNAME, $PASSWORD);
@@ -481,6 +497,14 @@ sub user_work
 		$result = $ua->request($req)->content();
 		$timearray[27] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
+		
+		# should return everything left
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/";
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
+		$result = $ua->request($req)->content();
+		$timearray[17] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+		print "should return everything left: $result\n" if $VERBOSE;
 		
 		# should return ['test']
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/info/collections";
