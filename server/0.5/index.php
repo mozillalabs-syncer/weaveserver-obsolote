@@ -104,7 +104,7 @@
 		}
 	}
 
-	$server_time = microtime(1)
+	$server_time = microtime(1);
 	header("X-Weave-Timestamp: " . $server_time);
 	
 	#Basic path extraction and validation. No point in going on if these are missing
