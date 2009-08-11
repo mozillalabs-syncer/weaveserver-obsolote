@@ -416,7 +416,8 @@ class WeaveStorageMysql implements WeaveStorage
 	}
 	
 	function delete_objects($collection, $id = null, $parentid = null, $newer = null, $older = null, 
-								$sort = null, $limit = null, $offset = null)
+								$sort = null, $limit = null, $offset = null, $ids = null, 
+								$index_above = null, $index_below = null)
 	{
 		$params = array();
 		
@@ -431,12 +432,37 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $id;
 		}
 		
+		if ($ids && count($ids) > 0)
+		{
+			$qmarks = array();
+			$select_stmt .= " and id in (";
+			foreach ($ids as $temp)
+			{
+				$params[] = $temp;
+				$qmarks[] = '?';
+			}
+			$select_stmt .= implode(",", $qmarks);
+			$select_stmt .= ')';
+		}
+		
 		if ($parentid)
 		{
 			$select_stmt .= " and parentid = ?";
 			$params[] = $parentid;
 		}
 		
+		if ($index_above)
+		{
+			$select_stmt .= " and sortindex > ?";
+			$params[] = $parentid;
+		}
+
+		if ($index_below)
+		{
+			$select_stmt .= " and sortindex < ?";
+			$params[] = $parentid;
+		}
+				
 		if ($newer)
 		{
 			$select_stmt .= " and newer > ?";
@@ -513,7 +539,8 @@ class WeaveStorageMysql implements WeaveStorage
 	}
 	
 	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $newer = null, 
-								$older = null, $sort = null, $limit = null, $offset = null, $ids = null)
+								$older = null, $sort = null, $limit = null, $offset = null, $ids = null, 
+								$index_above = null, $index_below = null)
 	{
 		$full_list = $full ? '*' : 'id';
 		
@@ -547,6 +574,18 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $parentid;
 		}
 		
+		if ($index_above)
+		{
+			$select_stmt .= " and sortindex > ?";
+			$params[] = $parentid;
+		}
+
+		if ($index_below)
+		{
+			$select_stmt .= " and sortindex < ?";
+			$params[] = $parentid;
+		}
+		
 		if ($newer)
 		{
 			$select_stmt .= " and modified > ?";
@@ -570,10 +609,6 @@ class WeaveStorageMysql implements WeaveStorage
 		else if ($sort == 'oldest')
 		{
 			$select_stmt .= " order by modified";
-		}
-		else if ($sort == 'depthindex')
-		{
-			$select_stmt .= " order by depth,sortindex";
 		}
 		
 		if ($limit)
@@ -943,7 +978,8 @@ class WeaveStorageSqlite implements WeaveStorage
 	}
 	
 	function delete_objects($collection, $id = null, $parentid = null, $newer = null, $older = null, 
-								$sort = null, $limit = null, $offset = null)
+								$sort = null, $limit = null, $offset = null, $ids = null, 
+								$index_above = null, $index_below = null)
 	{
 		$params = array();
 		$select_stmt = '';
@@ -953,7 +989,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			#sqlite can't do sort or limit deletes without special compiled versions
 			#so, we need to grab the set, then delete it manually.
 		
-			$params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $newer, $older, $sort, $limit, $offset);
+			$params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $newer, $older, $sort, $limit, $offset, $ids, $index_above, $index_below);
 			if (!count($params))
 			{
 				return 1; #nothing to delete
@@ -975,12 +1011,37 @@ class WeaveStorageSqlite implements WeaveStorage
 				$params[] = $id;
 			}
 			
+			if ($ids && count($ids) > 0)
+			{
+				$qmarks = array();
+				$select_stmt .= " and id in (";
+				foreach ($ids as $temp)
+				{
+					$params[] = $temp;
+					$qmarks[] = '?';
+				}
+				$select_stmt .= implode(",", $qmarks);
+				$select_stmt .= ')';
+			}
+		
 			if ($parentid)
 			{
 				$select_stmt .= " and parentid = ?";
 				$params[] = $parentid;
 			}
 			
+			if ($index_above)
+			{
+				$select_stmt .= " and sortindex > ?";
+				$params[] = $parentid;
+			}
+	
+			if ($index_below)
+			{
+				$select_stmt .= " and sortindex < ?";
+				$params[] = $parentid;
+			}
+
 			if ($newer)
 			{
 				$select_stmt .= " and modified > ?";
@@ -1056,7 +1117,9 @@ class WeaveStorageSqlite implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $newer = null, $older = null, $sort = null, $limit = null, $offset = null)
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null,
+								$newer = null, $older = null, $sort = null, $limit = null, $offset = null, $ids = null, 
+								$index_above = null, $index_below = null)
 	{
 		$full_list = $full ? '*' : 'id';
 			
@@ -1084,9 +1147,35 @@ class WeaveStorageSqlite implements WeaveStorage
 			$select_stmt .= ')';
 		}
 		
+		if ($ids && count($ids) > 0)
+		{
+			$qmarks = array();
+			$select_stmt .= " and id in (";
+			foreach ($ids as $temp)
+			{
+				$params[] = $temp;
+				$qmarks[] = '?';
+			}
+			$select_stmt .= implode(",", $qmarks);
+			$select_stmt .= ')';
+		}
+	
 		if ($parentid)
 		{
 			$select_stmt .= " and parentid = ?";
+			$params[] = $parentid;
+		}
+		
+	
+		if ($index_above)
+		{
+			$select_stmt .= " and sortindex > ?";
+			$params[] = $parentid;
+		}
+
+		if ($index_below)
+		{
+			$select_stmt .= " and sortindex < ?";
 			$params[] = $parentid;
 		}
 		

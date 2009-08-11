@@ -228,7 +228,9 @@
 								array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
 								array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
 								array_key_exists('offset', $_GET) ? $_GET['offset'] : null,
-								array_key_exists('ids', $_GET) ? explode(',', $_GET['ids']) : null
+								array_key_exists('ids', $_GET) ? explode(',', $_GET['ids']) : null,
+								array_key_exists('index_above', $_GET) ? $_GET['index_above'] : null, 
+								array_key_exists('index_below', $_GET) ? $_GET['index_below'] : null
 								);
 				}
 				catch(Exception $e)
@@ -409,7 +411,11 @@
 							array_key_exists('older', $_GET) ? $_GET['older'] : null, 
 							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
 							array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
-							array_key_exists('offset', $_GET) ? $_GET['offset'] : null);			
+							array_key_exists('offset', $_GET) ? $_GET['offset'] : null,
+							array_key_exists('ids', $_GET) ? explode(',', $_GET['ids']) : null,
+							array_key_exists('index_above', $_GET) ? $_GET['index_above'] : null, 
+							array_key_exists('index_below', $_GET) ? $_GET['index_below'] : null
+							);			
 			}
 			catch(Exception $e)
 			{
