@@ -434,6 +434,14 @@ sub user_work
 		$timearray[21] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return record 4: $result\n" if $VERBOSE;
 		
+		# should return the user id record for #4, #5 and #6
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?ids=4,5,6";
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
+		$result = $ua->request($req)->content();
+		$timearray[21] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+		print "should return 4, 5 and 6: $result\n" if $VERBOSE;
+		
 		# should return about half the ids
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?newer=$halftime";
 		$req->authorization_basic($USERNAME, $PASSWORD);

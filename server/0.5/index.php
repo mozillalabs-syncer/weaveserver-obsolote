@@ -227,7 +227,9 @@
 								array_key_exists('older', $_GET) ? $_GET['older'] : null, 
 								array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
 								array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
-								array_key_exists('offset', $_GET) ? $_GET['offset'] : null);
+								array_key_exists('offset', $_GET) ? $_GET['offset'] : null,
+								array_key_exists('ids', $_GET) ? explode(',', $_GET['ids']) : null
+								);
 				}
 				catch(Exception $e)
 				{

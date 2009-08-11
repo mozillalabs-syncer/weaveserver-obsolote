@@ -513,7 +513,7 @@ class WeaveStorageMysql implements WeaveStorage
 	}
 	
 	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $newer = null, 
-								$older = null, $sort = null, $limit = null, $offset = null)
+								$older = null, $sort = null, $limit = null, $offset = null, $ids = null)
 	{
 		$full_list = $full ? '*' : 'id';
 		
@@ -526,6 +526,19 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$select_stmt .= " and id = ?";
 			$params[] = $id;
+		}
+		
+		if ($ids && count($ids) > 0)
+		{
+			$qmarks = array();
+			$select_stmt .= " and id in (";
+			foreach ($ids as $temp)
+			{
+				$params[] = $temp;
+				$qmarks[] = '?';
+			}
+			$select_stmt .= implode(",", $qmarks);
+			$select_stmt .= ')';
 		}
 		
 		if ($parentid)
@@ -1056,6 +1069,19 @@ class WeaveStorageSqlite implements WeaveStorage
 		{
 			$select_stmt .= " and id = ?";
 			$params[] = $id;
+		}
+		
+		if ($ids && count($ids) > 0)
+		{
+			$qmarks = array();
+			$select_stmt .= " and id in (";
+			foreach ($ids as $temp)
+			{
+				$params[] = $temp;
+				$qmarks[] = '?';
+			}
+			$select_stmt .= implode(",", $qmarks);
+			$select_stmt .= ')';
 		}
 		
 		if ($parentid)
