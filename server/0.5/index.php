@@ -223,6 +223,7 @@
 				{
 					$ids = $db->retrieve_objects($collection, null, $full, $outputter,
 								array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
+								array_key_exists('predecessorid', $_GET) ? $_GET['predecessorid'] : null, 
 								array_key_exists('newer', $_GET) ? $_GET['newer'] : null, 
 								array_key_exists('older', $_GET) ? $_GET['older'] : null, 
 								array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
@@ -230,7 +231,8 @@
 								array_key_exists('offset', $_GET) ? $_GET['offset'] : null,
 								array_key_exists('ids', $_GET) ? explode(',', $_GET['ids']) : null,
 								array_key_exists('index_above', $_GET) ? $_GET['index_above'] : null, 
-								array_key_exists('index_below', $_GET) ? $_GET['index_below'] : null
+								array_key_exists('index_below', $_GET) ? $_GET['index_below'] : null,
+								array_key_exists('depth', $_GET) ? $_GET['depth'] : null
 								);
 				}
 				catch(Exception $e)
@@ -407,6 +409,7 @@
 			{
 				$db->delete_objects($collection, null,  
 							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
+							array_key_exists('predecessorid', $_GET) ? $_GET['predecessorid'] : null, 
 							array_key_exists('newer', $_GET) ? $_GET['newer'] : null, 
 							array_key_exists('older', $_GET) ? $_GET['older'] : null, 
 							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
@@ -481,7 +484,7 @@ class WBOJsonOutput
 			if ($this->_full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'},  $result{'predecessorid'}, $result{'modified'}, $result{'sortindex'}, $result{'payload'}, $result{'depth'});
 				echo $wbo->json();
 			}
 			else
@@ -499,7 +502,7 @@ class WBOJsonOutput
 			if ($this->_full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'predecessorid'}, $result{'modified'}, $result{'sortindex'}, $result{'payload'}, $result{'depth'});
 				$output = $wbo->json();
 			}
 			else
@@ -516,7 +519,7 @@ class WBOJsonOutput
 			if ($this->_full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'predecessorid'}, $result{'modified'}, $result{'sortindex'}, $result{'payload'}, $result{'depth'});
 				echo preg_replace('/\n/', '\u000a', $wbo->json());
 			}
 			else

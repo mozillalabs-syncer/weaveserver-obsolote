@@ -131,12 +131,15 @@ interface WeaveStorage
 # collection varbinary(64),
 # id varbinary(64),
 # parentid varbinary(64),
+# predecessorid varbinary(64),
 # sortindex int default null,
-# depth tinyint default null, 
-# modified bigint,
+# depth int default null,
+# modified decimal(12,2),
 # payload text,
 # primary key(username, collection, id),
 # index parentindex(username, collection, parentid),
+# index predecessorindex(username, collection, predecessorid),
+# index weightindex(username, collection, sortindex),
 # index modified(username, collection, modified)
 #) engine=InnoDB;
 
@@ -297,17 +300,20 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'replace into ' . $this->_db_name . ' (username, id, collection, parentid, depth, sortindex, modified, payload) 
-					values (:username, :id, :collection, :parentid, :depth, :sortindex, :modified, :payload)';
+			$insert_stmt = 'replace into ' . $this->_db_name . ' (username, id, collection, parentid, predecessorid, sortindex, modified, payload, depth) 
+					values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :depth)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->bindParam(':id', $wbo->id());
 			$sth->bindParam(':collection', $wbo->collection());
 			$sth->bindParam(':parentid', $wbo->parentid());
-			$sth->bindParam(':depth', $wbo->depth());
+			$sth->bindParam(':predecessorid', $wbo->predecessorid());
 			$sth->bindParam(':sortindex', $wbo->sortindex());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':payload', $wbo->payload());
+
+			$sth->bindParam(':depth', $wbo->depth());
+
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -334,8 +340,14 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		if ($wbo->parentid_exists())
 		{
-			$update_list[] = "parent_id = ?";
+			$update_list[] = "parentid = ?";
 			$params[] = $wbo->parentid();
+		}	
+		
+		if ($wbo->predecessorid_exists())
+		{
+			$update_list[] = "predecessorid = ?";
+			$params[] = $wbo->predecessorid();
 		}
 		
 		if ($wbo->depth_exists())
@@ -415,8 +427,8 @@ class WeaveStorageMysql implements WeaveStorage
 		return 1;
 	}
 	
-	function delete_objects($collection, $id = null, $parentid = null, $newer = null, $older = null, 
-								$sort = null, $limit = null, $offset = null, $ids = null, 
+	function delete_objects($collection, $id = null, $parentid = null, $predecessorid = null, $newer = null, 
+								$older = null, $sort = null, $limit = null, $offset = null, $ids = null, 
 								$index_above = null, $index_below = null)
 	{
 		$params = array();
@@ -451,6 +463,12 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $parentid;
 		}
 		
+		if ($predecessorid)
+		{
+			$select_stmt .= " and predecessorid = ?";
+			$params[] = $predecessorid;
+		}
+
 		if ($index_above)
 		{
 			$select_stmt .= " and sortindex > ?";
@@ -477,7 +495,7 @@ class WeaveStorageMysql implements WeaveStorage
 	
 		if ($sort == 'index')
 		{
-			$select_stmt .= " order by sortindex";
+			$select_stmt .= " order by sortindex desc";
 		}
 		else if ($sort == 'newest')
 		{
@@ -534,9 +552,10 @@ class WeaveStorageMysql implements WeaveStorage
 		return $wbo;
 	}
 	
-	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, $newer = null, 
+	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null, 
+								$predecessorid = null, $newer = null, 
 								$older = null, $sort = null, $limit = null, $offset = null, $ids = null, 
-								$index_above = null, $index_below = null)
+								$index_above = null, $index_below = null, $depth = null)
 	{
 		$full_list = $full ? '*' : 'id';
 		
@@ -570,6 +589,12 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $parentid;
 		}
 		
+		if ($predecessorid)
+		{
+			$select_stmt .= " and predecessorid = ?";
+			$params[] = $predecessorid;
+		}
+		
 		if ($index_above)
 		{
 			$select_stmt .= " and sortindex > ?";
@@ -594,9 +619,15 @@ class WeaveStorageMysql implements WeaveStorage
 			$params[] = $older;
 		}
 	
+		if ($depth)
+		{
+			$select_stmt .= " and depth = ?";
+			$params[] = $depth;
+		}
+	
 		if ($sort == 'index')
 		{
-			$select_stmt .= " order by sortindex";
+			$select_stmt .= " order by sortindex desc";
 		}
 		else if ($sort == 'newest')
 		{
@@ -857,16 +888,20 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'replace into wbo (id, collection, parentid, depth, sortindex, modified, payload) 
-					values (:id, :collection, :parentid, :depth, :sortindex, :modified, :payload)';
+			$insert_stmt = 'replace into wbo (id, collection, parentid, predecessorid, sortindex, modified, payload, depth) 
+					values (:id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :depth)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':id', $wbo->id());
 			$sth->bindParam(':collection', $wbo->collection());
 			$sth->bindParam(':parentid', $wbo->parentid());
+			$sth->bindParam(':predecessorid', $wbo->predecessorid());
 			$sth->bindParam(':depth', $wbo->depth());
 			$sth->bindParam(':sortindex', $wbo->sortindex());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':payload', $wbo->payload());
+
+			$sth->bindParam(':depth', $wbo->depth());
+
 			$sth->execute();
 
 		}
@@ -894,8 +929,14 @@ class WeaveStorageSqlite implements WeaveStorage
 
 		if ($wbo->parentid_exists())
 		{
-			$update_list[] = " parent_id = ?";
+			$update_list[] = " parentid = ?";
 			$params[] = $wbo->parentid();
+		}
+
+		if ($wbo->parentid_exists())
+		{
+			$update_list[] = " predecessorid = ?";
+			$params[] = $wbo->predecessorid();
 		}
 		
 		if ($wbo->depth_exists())
@@ -973,8 +1014,8 @@ class WeaveStorageSqlite implements WeaveStorage
 		return 1;
 	}
 	
-	function delete_objects($collection, $id = null, $parentid = null, $newer = null, $older = null, 
-								$sort = null, $limit = null, $offset = null, $ids = null, 
+	function delete_objects($collection, $id = null, $parentid = null, $predecessorid = null, $newer = null,
+								$older = null, $sort = null, $limit = null, $offset = null, $ids = null, 
 								$index_above = null, $index_below = null)
 	{
 		$params = array();
@@ -985,7 +1026,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			#sqlite can't do sort or limit deletes without special compiled versions
 			#so, we need to grab the set, then delete it manually.
 		
-			$params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $newer, $older, $sort, $limit, $offset, $ids, $index_above, $index_below);
+			$params = $this->retrieve_objects($collection, $id, 0, 0, $parentid, $predecessorid, $newer, $older, $sort, $limit, $offset, $ids, $index_above, $index_below);
 			if (!count($params))
 			{
 				return 1; #nothing to delete
@@ -1026,6 +1067,12 @@ class WeaveStorageSqlite implements WeaveStorage
 				$params[] = $parentid;
 			}
 			
+			if ($predecessorid)
+			{
+				$select_stmt .= " and predecessorid = ?";
+				$params[] = $parentid;
+			}
+
 			if ($index_above)
 			{
 				$select_stmt .= " and sortindex > ?";
@@ -1052,7 +1099,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 			if ($sort == 'index')
 			{
-				$select_stmt .= " order by sortindex";
+				$select_stmt .= " order by sortindex desc";
 			}
 			else if ($sort == 'newest')
 			{
@@ -1110,8 +1157,9 @@ class WeaveStorageSqlite implements WeaveStorage
 	}
 	
 	function retrieve_objects($collection, $id = null, $full = null, $direct_output = null, $parentid = null,
-								$newer = null, $older = null, $sort = null, $limit = null, $offset = null, $ids = null, 
-								$index_above = null, $index_below = null)
+								$predecessorid = null, $newer = null, $older = null, $sort = null, 
+								$limit = null, $offset = null, $ids = null, 
+								$index_above = null, $index_below = null, $depth = null)
 	{
 		$full_list = $full ? '*' : 'id';
 			
@@ -1159,6 +1207,12 @@ class WeaveStorageSqlite implements WeaveStorage
 		}
 		
 	
+		if ($predecessorid)
+		{
+			$select_stmt .= " and predecessorid = ?";
+			$params[] = $predecessorid;
+		}
+
 		if ($index_above)
 		{
 			$select_stmt .= " and sortindex > ?";
@@ -1183,9 +1237,16 @@ class WeaveStorageSqlite implements WeaveStorage
 			$params[] = $older;
 		}
 	
+	
+		if ($depth)
+		{
+			$select_stmt .= " and depth = ?";
+			$params[] = $depth;
+		}
+
 		if ($sort == 'index')
 		{
-			$select_stmt .= " order by sortindex";
+			$select_stmt .= " order by sortindex desc";
 		}
 		else if ($sort == 'newest')
 		{
@@ -1281,6 +1342,7 @@ create table wbo
  id text,
  collection text,
  parentid text,
+ predecessorid int,
  modified real,
  sortindex int,
  depth int,
@@ -1291,7 +1353,8 @@ end;
 
 			$index1 = 'create index idindex on wbo (id)';
 			$index2 = 'create index parentindex on wbo (parentid)';
-			$index3 = 'create index modifiedindex on wbo (modified DESC)';
+			$index3 = 'create index predecessorindex on wbo (predecessor)';
+			$index3 = 'create index modifiedindex on wbo (modified)';
 		
 		
 			$sth = $dbh->prepare($create_statement);

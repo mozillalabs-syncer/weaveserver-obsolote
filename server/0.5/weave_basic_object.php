@@ -67,6 +67,11 @@ class wbo
 		{
 			$this->parentid($extracted['parentid']);
 		}
+		
+		if (array_key_exists('predecessorid', $extracted))
+		{
+			$this->parentid($extracted['predecessorid']);
+		}
 
 		if (array_key_exists('depth', $extracted))
 		{
@@ -85,15 +90,17 @@ class wbo
 		return 1;
 	}
 	
-	function populate($id, $collection, $parent = null, $modified, $depth = null, $sortindex = null, $payload = null)
+	function populate($id, $collection, $parent = null, $predecessor = null, $modified, $sortindex = null, $payload = null, $depth = null)
 	{
 		$this->id($id);
 		$this->collection($collection);
 		$this->parentid($parent);
 		$this->modified($modified);
-		$this->depth($depth);
+		$this->predecessorid($predecessor);
 		$this->sortindex($sortindex);
 		$this->payload($payload);
+
+		$this->depth($depth);
 	}
 
 	function id($id = null)
@@ -117,6 +124,17 @@ class wbo
 	function parentid_exists()
 	{
 		return array_key_exists('parentid', $this->wbo_hash);
+	}
+	
+	function predecessorid($predecessorid = null)
+	{
+		if (!is_null($predecessorid)){ $this->wbo_hash['predecessorid'] = $predecessorid; }
+		return array_key_exists('predecessorid', $this->wbo_hash) ?  $this->wbo_hash['predecessorid'] : null;
+	}
+	
+	function predecessorid_exists()
+	{
+		return array_key_exists('predecessorid', $this->wbo_hash);
 	}
 	
 	function modified($modified = null)
@@ -152,10 +170,9 @@ class wbo
 		return array_key_exists('sortindex', $this->wbo_hash);
 	}
 	
-	
 	function depth($depth = null)
 	{
-		if (!is_null($depth)){ $this->wbo_hash['depth'] = (int)$depth; }
+		if (!is_null($index)){ $this->wbo_hash['depth'] = (int)$depth; }
 		return array_key_exists('depth', $this->wbo_hash) ?  $this->wbo_hash['depth'] : null;
 	}
 
@@ -164,7 +181,7 @@ class wbo
 		return array_key_exists('depth', $this->wbo_hash);
 	}
 	
-	
+		
 	function validate()
 	{
 		
@@ -173,6 +190,9 @@ class wbo
 
 		if ($this->parentid_exists() && strlen($this->parentid()) > 64)
 		{ $this->_error[] = "invalid parentid"; }
+
+		if ($this->predecessorid_exists() && strlen($this->predecessorid()) > 64)
+		{ $this->_error[] = "invalid predecessorid"; }
 
 		if (!is_numeric($this->modified()))
 		{ $this->_error[] = "invalid modified date"; }
