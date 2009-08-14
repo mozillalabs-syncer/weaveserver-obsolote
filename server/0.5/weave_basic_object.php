@@ -70,7 +70,7 @@ class wbo
 		
 		if (array_key_exists('predecessorid', $extracted))
 		{
-			$this->parentid($extracted['predecessorid']);
+			$this->predecessorid($extracted['predecessorid']);
 		}
 
 		if (array_key_exists('depth', $extracted))
