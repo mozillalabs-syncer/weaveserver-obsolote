@@ -90,17 +90,17 @@ class wbo
 		return 1;
 	}
 	
-	function populate($id, $collection, $parent = null, $predecessor = null, $modified, $sortindex = null, $payload = null, $depth = null)
+	function populate(&$datahash)
 	{
-		$this->id($id);
-		$this->collection($collection);
-		$this->parentid($parent);
-		$this->modified($modified);
-		$this->predecessorid($predecessor);
-		$this->sortindex($sortindex);
-		$this->payload($payload);
+		$this->id($datahash['id']);
+		$this->collection($datahash['collection']);
+		$this->parentid($datahash['parentid']);
+		$this->modified($datahash['modified']);
+		$this->predecessorid($datahash['predecessorid']);
+		$this->sortindex($datahash['sortindex']);
+		$this->payload($datahash['payload']);
 
-		$this->depth($depth);
+		$this->depth($datahash['depth']);
 	}
 
 	function id($id = null)

@@ -548,7 +548,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+		$wbo->populate($result);
 		return $wbo;
 	}
 	
@@ -666,7 +666,7 @@ class WeaveStorageMysql implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				$wbo->populate($result);
 				$ids[] = $wbo;
 			}
 			else
@@ -1152,7 +1152,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
 		
 		$wbo = new wbo();
-		$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+		$wbo->populate($result);
 		return $wbo;
 	}
 	
@@ -1286,7 +1286,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			if ($full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'modified'}, $result{'depth'}, $result{'sortindex'}, $result{'payload'});
+				$wbo->populate($result);
 				$ids[] = $wbo;
 			}
 			else

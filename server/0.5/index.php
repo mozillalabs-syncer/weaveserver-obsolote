@@ -484,7 +484,7 @@ class WBOJsonOutput
 			if ($this->_full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'},  $result{'predecessorid'}, $result{'modified'}, $result{'sortindex'}, $result{'payload'}, $result{'depth'});
+				$wbo->populate($result);
 				echo $wbo->json();
 			}
 			else
@@ -502,7 +502,7 @@ class WBOJsonOutput
 			if ($this->_full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'predecessorid'}, $result{'modified'}, $result{'sortindex'}, $result{'payload'}, $result{'depth'});
+				$wbo->populate($result);
 				$output = $wbo->json();
 			}
 			else
@@ -519,7 +519,7 @@ class WBOJsonOutput
 			if ($this->_full)
 			{
 				$wbo = new wbo();
-				$wbo->populate($result{'id'}, $result{'collection'}, $result{'parentid'}, $result{'predecessorid'}, $result{'modified'}, $result{'sortindex'}, $result{'payload'}, $result{'depth'});
+				$wbo->populate($result);
 				echo preg_replace('/\n/', '\u000a', $wbo->json());
 			}
 			else
