@@ -300,8 +300,11 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'replace into ' . $this->_db_name . ' (username, id, collection, parentid, predecessorid, sortindex, modified, payload, depth) 
-					values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :depth)';
+			$insert_stmt = 'insert into ' . $this->_db_name . ' (username, id, collection, parentid, predecessorid, sortindex, modified, payload, depth) 
+					values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :depth)
+					on duplicate key update parentid = values(parentid), predecessorid = values(predecessorid), sortindex = values(sortindex), modified = values(modified),
+					payload = values(payload), depth = values(depth)';
+
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $this->_username);
 			$sth->bindParam(':id', $wbo->id());

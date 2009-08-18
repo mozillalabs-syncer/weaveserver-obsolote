@@ -172,7 +172,7 @@ class wbo
 	
 	function depth($depth = null)
 	{
-		if (!is_null($index)){ $this->wbo_hash['depth'] = (int)$depth; }
+		if (!is_null($depth)){ $this->wbo_hash['depth'] = (int)$depth; }
 		return array_key_exists('depth', $this->wbo_hash) ?  $this->wbo_hash['depth'] : null;
 	}
 
