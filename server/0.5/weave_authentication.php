@@ -297,6 +297,15 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		return WEAVE_LDAP_AUTH_USER_PARAM_NAME."=$user,".WEAVE_LDAP_AUTH_DN;
 	}
 	
+	private function getUserAttribute($user, $attr)
+	{
+		$this->authorize();
+		$dn = $this->constructUserDN($user);
+		$re = ldap_read($this->_conn, $dn, "objectClass=*", array($attr));
+		return ldap_get_attributes($this->_conn,
+			ldap_first_entry($this->_conn, $re));
+	}
+	
 	function __construct($conn = null)
 	{
 		if (!$conn)
@@ -334,7 +343,21 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	function authenticate_user($username, $password)
 	{
 		$dn = $this->constructUserDN($username);
-
+		
+		// Check if assigned node is same as current host
+		$nd = "";
+		$va = $this->getUserAttribute($username, "primaryNode");
+		for ($i = 0; $i < $va["primaryNode"]["count"]; $i++)
+		{
+			$node = $va["primaryNode"][$i];
+			if (substr($node, 0, 6) == "weave:") {
+				$nd = substr($node, 6);
+				break;
+			}
+		}
+		if (trim($nd) != $_SERVER['HTTP_HOST'])
+			return 0;
+		
 		if (ldap_bind($this->_conn, $dn, $password))
 			return 1;
 		return 0;
