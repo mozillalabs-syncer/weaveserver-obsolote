@@ -150,29 +150,27 @@
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #create a new user
 		{
+			if (!(defined('WEAVE_REGISTER_ADMIN_SECRET') 
+					&& array_key_exists('HTTP_X_WEAVE_SECRET', $_SERVER)
+					&& WEAVE_REGISTER_ADMIN_SECRET == $_SERVER['HTTP_X_WEAVE_SECRET']))
+			{
+				if (defined('WEAVE_REGISTER_USE_CAPTCHA') && WEAVE_REGISTER_USE_CAPTCHA)
+				{
+					require_once 'recaptcha.php';
+					if (!$json['captcha-challenge'] || !$json['captcha-response'])
+						report_problem("2", 400);
+					
+					$captcha_check = recaptcha_check_answer(RECAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'], $json['captcha-challenge'], $json['captcha-response']);
+					if (!$captcha_check->is_valid)
+						report_problem("2", 400);
+				}
+			}
+
 			$putdata = fopen("php://input", "r");
 			$jsonstring = '';
 			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
 			$json = json_decode($jsonstring, true);
 
-			if (defined(WEAVE_REGISTER_ADMIN_SECRET) && WEAVE_REGISTER_ADMIN_SECRET)
-			{
-				if (WEAVE_USER_ADMIN_SECRET != $json['secret'])
-				{
-					report_problem("Secret missing or incorrect", 400);
-				}					
-			}
-			elseif (defined(WEAVE_REGISTER_USE_CAPTCHA) && WEAVE_REGISTER_USE_CAPTCHA)
-			{
-				require_once 'recaptcha.php';
-				if (!$json['captcha-challenge'] || !$json['captcha-response'])
-					report_problem("2", 400);
-				
-				$captcha_check = recaptcha_check_answer(RECAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'], $json['captcha-challenge'], $json['captcha-response']);
-				if (!$captcha_check->is_valid)
-					report_problem("2", 400);
-			}
-			
 			if (!preg_match('/^[A-Z0-9._-]+/i', $url_user)) 
 				report_problem("3", 400);
 
@@ -180,10 +178,6 @@
 				report_problem("4", 400);
 
 
-			$putdata = fopen("php://input", "r");
-			$jsonstring = '';
-			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
-			$json = json_decode($jsonstring, true);
 			$password = $json['password'];
 			$email = $json['email'];
 
@@ -231,13 +225,12 @@
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') #delete a user from the server. Need to delete their storage as well.
 		{
-			if (!(defined(WEAVE_REGISTER_ADMIN_SECRET) 
-					&& array_key_exists($_POST['secret'])
-					&& WEAVE_USER_ADMIN_SECRET == (ini_get('magic_quotes_gpc') ? stripslashes($_POST['secret']) : $_POST['secret'])))
+			if (!(defined('WEAVE_REGISTER_ADMIN_SECRET') 
+					&& array_key_exists('HTTP_X_WEAVE_SECRET', $_SERVER)
+					&& WEAVE_REGISTER_ADMIN_SECRET == $_SERVER['HTTP_X_WEAVE_SECRET']))
 			{
 				verify_user($url_user, $authdb);
 			}
-
 			$storagedb = get_storage_write_object($url_user);	
 
 			try

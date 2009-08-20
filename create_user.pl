@@ -46,7 +46,7 @@ use HTTP::Request::Common qw/PUT GET POST/;
 my $PROTOCOL = 'http';
 my $SERVER = 'localhost';
 my $ADMIN_SECRET = 'bad secret';
-my $ADMIN_PREFIX = 'weave/admin';
+my $ADMIN_PREFIX = 'user/1';
 my $HTTP_USERNAME = '';
 my $HTTP_PASSWORD = '';
 
@@ -83,10 +83,11 @@ if( $command eq "c" ) {
   $ADMIN_SECRET = $secret if $secret;
 
   #create the user
-  $req = POST "$PROTOCOL://$SERVERLOGIN$SERVER/$ADMIN_PREFIX", ['function' => 'create', 'user' => $username, 'pass' => $password, 'secret' => $ADMIN_SECRET];
+  $req = PUT "$PROTOCOL://$SERVERLOGIN$SERVER/$ADMIN_PREFIX/$username", HTTP::Headers->new('X-Weave-Secret' => $secret);
+  $req->content('{"password":"' . $password . '"}');
   $req->content_type('application/x-www-form-urlencoded');
-  print "create user: " . $ua->request($req)->content() . "\n";
-
+  print "add user: " . $ua->request($req)->content();  
+ 
 } elsif( $command eq "d" ) {
 
   print "Username: ";
@@ -99,9 +100,9 @@ if( $command eq "c" ) {
   $ADMIN_SECRET = $secret if $secret;
 
   #delete the user
-  $req = POST "$PROTOCOL://$SERVERLOGIN$SERVER/$ADMIN_PREFIX", ['function' => 'delete', 'user' => $username, 'secret' => $ADMIN_SECRET];
-  $req->content_type('application/x-www-form-urlencoded');
+  my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVERLOGIN$SERVER/$ADMIN_PREFIX/$username", HTTP::Headers->new('X-Weave-Secret' => $secret));
   print "delete user: " . $ua->request($req)->content() . "\n";
+
 
 } else {
 

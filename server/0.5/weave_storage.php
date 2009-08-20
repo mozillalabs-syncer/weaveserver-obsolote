@@ -1350,6 +1350,7 @@ create table wbo
  sortindex int,
  depth int,
  payload text,
+ payload_size int,
  primary key (collection,id)
 )
 end;
@@ -1357,7 +1358,7 @@ end;
 			$index1 = 'create index idindex on wbo (id)';
 			$index2 = 'create index parentindex on wbo (parentid)';
 			$index3 = 'create index predecessorindex on wbo (predecessor)';
-			$index3 = 'create index modifiedindex on wbo (modified)';
+			$index4 = 'create index modifiedindex on wbo (modified)';
 		
 		
 			$sth = $dbh->prepare($create_statement);
@@ -1367,6 +1368,8 @@ end;
 			$sth = $dbh->prepare($index2);
 			$sth->execute();
 			$sth = $dbh->prepare($index3);
+			$sth->execute();
+			$sth = $dbh->prepare($index4);
 			$sth->execute();
 		}
 		catch( PDOException $exception )
