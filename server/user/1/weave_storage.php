@@ -76,9 +76,6 @@ function get_storage_write_object($username, $dbh = null)
 }
 
 
-#PDO wrapper to an underlying SQLite storage engine.
-#Note that username is only needed for opening the file. All operations after that will be on that user.
-
 interface WeaveStorage
 {
 	function __construct($username, $dbh = null);
@@ -94,7 +91,7 @@ interface WeaveStorage
 
 
 
-interface WeaveStorageNone implements WeaveStorage
+class WeaveStorageNone implements WeaveStorage
 {
 	function __construct($username, $dbh = null)
 	{
