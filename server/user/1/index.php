@@ -132,7 +132,7 @@
 			switch($action)
 			{
 				case 'node':
-					if (defined(WEAVE_REGISTER_STORAGE_LOCATION))
+					if (defined('WEAVE_REGISTER_STORAGE_LOCATION'))
 						exit(json_encode(WEAVE_REGISTER_STORAGE_LOCATION));
 					if ($location = $authdb->get_user_location($url_user))
 						exit(json_encode($location));					

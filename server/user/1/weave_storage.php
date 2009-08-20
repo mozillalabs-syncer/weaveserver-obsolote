@@ -52,6 +52,8 @@ function get_storage_read_object($username, $dbh = null)
 			return new WeaveStorageMysql($username, $dbh);
 		case 'sqlite':
 			return new WeaveStorageSqlite($username, $dbh);
+		case 'none':
+			return new WeaveStorageNone($username, $dbh);
 		default:
 			throw new Exception("Unknown storage type", 503);
 	}				
@@ -66,6 +68,8 @@ function get_storage_write_object($username, $dbh = null)
 			return new WeaveStorageMysql($username, $dbh ? $dbh : 'write');
 		case 'sqlite':
 			return new WeaveStorageSqlite($username, $dbh);
+		case 'none':
+			return new WeaveStorageNone($username, $dbh);
 		default:
 			throw new Exception("Unknown storage type", 503);
 	}				
@@ -86,6 +90,36 @@ interface WeaveStorage
 	function create_user();
 
 	function delete_user();
+}
+
+
+
+interface WeaveStorageNone implements WeaveStorage
+{
+	function __construct($username, $dbh = null)
+	{
+		return;
+	}
+
+	function open_connection()
+	{
+		return;
+	}
+
+	function get_connection()
+	{
+		return null;
+	}
+	
+	function create_user()
+	{
+		return 1;
+	}
+	
+	function delete_user()
+	{
+		return 1;
+	}
 }
 
 
@@ -178,10 +212,9 @@ class WeaveStorageMysql implements WeaveStorage
 
 }
 
+#PDO wrapper to an underlying SQLite storage engine.
+#Note that username is only needed for opening the file. All operations after that will be on that user.
 
-
-
-#Sqlite version of the object
 class WeaveStorageSqlite implements WeaveStorage
 {
 	private $_username;
