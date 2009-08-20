@@ -150,91 +150,84 @@
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #create a new user
 		{
-			if ($action == 'none')
+			$putdata = fopen("php://input", "r");
+			$jsonstring = '';
+			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
+			$json = json_decode($jsonstring, true);
+
+			if (defined(WEAVE_REGISTER_ADMIN_SECRET) && WEAVE_REGISTER_ADMIN_SECRET)
 			{
-				if (defined(WEAVE_REGISTER_ADMIN_SECRET) && WEAVE_REGISTER_ADMIN_SECRET)
+				if (WEAVE_USER_ADMIN_SECRET != $json['secret'])
 				{
-					if (WEAVE_USER_ADMIN_SECRET != (ini_get('magic_quotes_gpc') ? stripslashes($_POST['secret']) : $_POST['secret']))
-					{
-						report_problem("Secret missing or incorrect", 400);
-					}					
-				}
-				elseif (defined(WEAVE_REGISTER_USE_CAPTCHA) && WEAVE_REGISTER_USE_CAPTCHA)
-				{
-					require_once 'recaptcha.php';
-					$challenge = array_key_exists('captcha-challenge', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['captcha-challenge']) : $_POST['captcha-challenge']) : null;
-					$response = array_key_exists('captcha-response', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['captcha-response']) : $_POST['captcha-response']) : null;
-					if (!$challenge || !$response)
-						report_problem("2", 400);
-					
-					$captcha_check = recaptcha_check_answer(RECAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'], $challenge, $response);
-					if (!$captcha_check->is_valid)
-						report_problem("2", 400);
-				}
-				
-				if (!preg_match('/^[A-Z0-9._-]+/i', $url_user)) 
-					report_problem("3", 400);
-
-				if ($authdb->user_exists($url_user))
-					report_problem("4", 400);
-
-
-				$putdata = fopen("php://input", "r");
-				$jsonstring = '';
-				while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
-				$json = json_decode($jsonstring, true);
-				$password = $json['password'];
-				$email = $json['email'];
-
-				if (!verify_password_strength($password, $url_user))
-				{
-					report_problem("Bad password", 400);
-				}
-				
-				try
-				{
-					$storagedb = get_storage_write_object($url_user);	
-					$storagedb->create_user($url_user, $password);
-					$authdb->create_user($url_user, $password, $email);
-				}
-				catch(Exception $e)
-				{
-					report_problem($e->getMessage(), $e->getCode());
-				}
-				exit(json_encode($url_user));
+					report_problem("Secret missing or incorrect", 400);
+				}					
 			}
-			else #everything else requires you to be logged in
+			elseif (defined(WEAVE_REGISTER_USE_CAPTCHA) && WEAVE_REGISTER_USE_CAPTCHA)
 			{
-				verify_user($url_user, $authdb);
+				require_once 'recaptcha.php';
+				if (!$json['captcha-challenge'] || !$json['captcha-response'])
+					report_problem("2", 400);
 				
-				#set an X-Weave-Alert header if the user needs to know something
-				if ($alert = $authdb->get_user_alert())
-					header("X-Weave-Alert: $alert", false);
-
-				switch($action)
-				{
-					case 'password':
-						$new_password = file_get_contents("php://input");
-						if (!verify_password_strength($new_password, $url_user))
-							report_problem("Bad password", 400);
-						
-						$authdb->update_password($url_user, $new_password);
-						break;
-					case 'email':
-						$new_email = file_get_contents("php://input");
-						$authdb->update_email($url_user, $new_email);
-						exit(json_encode($new_email));
-					case 'weaveNode':
-						$new_node = file_get_contents("php://input");
-						$authdb->update_location($url_user, $new_node);
-						exit(json_encode($new_node));
-					default:
-						report_problem("1", 400);
-				}
+				$captcha_check = recaptcha_check_answer(RECAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'], $json['captcha-challenge'], $json['captcha-response']);
+				if (!$captcha_check->is_valid)
+					report_problem("2", 400);
 			}
 			
-	
-	
+			if (!preg_match('/^[A-Z0-9._-]+/i', $url_user)) 
+				report_problem("3", 400);
+
+			if ($authdb->user_exists($url_user))
+				report_problem("4", 400);
+
+
+			$putdata = fopen("php://input", "r");
+			$jsonstring = '';
+			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
+			$json = json_decode($jsonstring, true);
+			$password = $json['password'];
+			$email = $json['email'];
+
+			if (!verify_password_strength($password, $url_user))
+			{
+				report_problem("Bad password", 400);
+			}
+			
+			try
+			{
+				$storagedb = get_storage_write_object($url_user);	
+				$storagedb->create_user($url_user, $password);
+				$authdb->create_user($url_user, $password, $email);
+			}
+			catch(Exception $e)
+			{
+				report_problem($e->getMessage(), $e->getCode());
+			}
+			exit(json_encode($url_user));
+		}
+		else if ($_SERVER['REQUEST_METHOD'] == 'POST') #manipulate a user
+		{
+			verify_user($url_user, $authdb);
+			
+			#set an X-Weave-Alert header if the user needs to know something
+			if ($alert = $authdb->get_user_alert())
+				header("X-Weave-Alert: $alert", false);
+
+			switch($action)
+			{
+				case 'password':
+					$new_password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
+					if (!verify_password_strength($new_password, $url_user))
+						report_problem("Bad password", 400);
+					
+					$authdb->update_password($url_user, $new_password);
+					exit("1");
+				case 'email':
+					$new_email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
+					$authdb->update_email($url_user, $new_email);
+					exit(json_encode($new_email));
+				default:
+					report_problem("1", 400);
+			}			
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') #delete a user from the server. Need to delete their storage as well.
 		{
