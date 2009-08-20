@@ -160,7 +160,7 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	{
 		try
 		{
-			$select_stmt = 'select status, alert from users where username = :username and md5 = :md5';
+			$select_stmt = 'select location, status, alert from users where username = :username and md5 = :md5';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
@@ -178,6 +178,10 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		}
 		
 		$this->_alert = $result['alert'];
+		
+		if ($result['location'] && $result['location'] != $_SERVER['HTTP_HOST'])
+			return 0;
+			
 		return $result['status'];
 	}
 
@@ -240,7 +244,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	{
 		try
 		{
-			$select_stmt = 'select status, alert from users where username = :username and md5 = :md5';
+			$select_stmt = 'select location, status, alert from users where username = :username and md5 = :md5';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
@@ -258,8 +262,12 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		}
 		
 		$this->_alert = $result['alert'];
+		if ($result['location'] && $result['location'] != $_SERVER['HTTP_HOST'])
+			return 0;
+
 		return $result['status'];
 	}
+
 	function get_user_alert()
 	{
 		return $this->_alert;

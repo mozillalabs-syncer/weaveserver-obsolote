@@ -234,6 +234,13 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		return $this->_dbh;
 	}
 
+  	function get_new_user_node()
+  	{
+  		if (defined('WEAVE_REGISTER_NODE'))
+  			return WEAVE_REGISTER_NODE;
+  		return null;
+  	}
+
 	function create_user($username, $password, $email = "")
 	{ 
 		if (!$username)
@@ -247,11 +254,13 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email, status) values (:username, :md5, :email, 1)';
+			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, :location, 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
 			$sth->bindParam(':email', $email);
+			$sth->bindParam(':location', get_new_user_node());
+
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -582,6 +591,13 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	}
 
 
+  	function get_new_user_node()
+  	{
+  		if (defined('WEAVE_REGISTER_NODE'))
+  			return WEAVE_REGISTER_NODE;
+  		return null;
+  	}
+  	
 	#Don't forget to tell the storage object to initialize the user db (preferably first)!
 	function create_user($username, $password, $email = "")
 	{ 
@@ -596,11 +612,12 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email, status) values (:username, :md5, :email, 1)';
+			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, :location, 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
 			$sth->bindParam(':email', $email);
+			$sth->bindParam(':location', get_new_user_node());
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -950,6 +967,13 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		return $this->_conn;
 	}
   
+  	function get_new_user_node()
+  	{
+  		if (defined('WEAVE_REGISTER_NODE'))
+  			return WEAVE_REGISTER_NODE;
+  		return null;
+  	}
+  	
 	function create_user($username, $password, $email = "")
 	{
 		$this->authorize();
@@ -957,11 +981,13 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		$dn = $this->constructUserDN($username);
 		$key = sha1(mt_rand().$username);
 
+		$node = get_new_user_node();
+		
 		$record = array(
 			'cn' => $username,
 			'sn' => $username,
-			'primaryNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
-			'rescueNode' => 'weave:'.WEAVE_LDAP_CLUSTER,
+			'primaryNode' => 'weave:'. $node,
+			'rescueNode' => 'weave:'. $node,
 			'uid' => $username,
 			'userPassword' => $this->generateSSHAPassword($password),
 			'mail-verified' => $key,
