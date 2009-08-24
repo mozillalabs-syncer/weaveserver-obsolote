@@ -220,15 +220,7 @@ class WeaveStorageSqlite implements WeaveStorage
 	function __construct($username, $dbh = null) 
 	{
 		$this->_username = $username;
-		if (!$dbh)
-		{
-			$this->open_connection();
-		}
-		elseif (is_object($dbh))
-		{
-			$this->_dbh = $dbh;
-		}
-		#otherwise we do nothing with the connection
+		#don't connect yet
 	}
 	
 	function open_connection()
@@ -254,6 +246,8 @@ class WeaveStorageSqlite implements WeaveStorage
 
 	function get_connection()
 	{
+		if (!$this->_dbh)
+			open_connection();
 		return $this->_dbh;
 	}
 
@@ -271,7 +265,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		if (!is_dir($path)) { mkdir ($path); }
 		$path .= '/' . $username_md5{2};
 		if (!is_dir($path)) { mkdir ($path); }
-		
+
 		#create our user's db file
 		try
 		{
@@ -283,6 +277,7 @@ create table wbo
  id text,
  collection text,
  parentid text,
+ predecessorid text,
  modified real,
  sortindex int,
  depth int,
@@ -314,6 +309,8 @@ end;
 
 	function delete_user()
 	{
+		if (!$this->_dbh)
+			$this->open_connection();
 		$username_md5 = md5($this->_username);
 		$db_name = WEAVE_SQLITE_STORE_DIRECTORY . '/' . $username_md5{0} . '/' . $username_md5{1} . '/' . $username_md5{2} . '/' . $username_md5;
 		unlink($db_name);

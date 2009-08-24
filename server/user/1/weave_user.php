@@ -517,22 +517,6 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		return 1;
 	}
 
-	function create_user_table()
-	{
-		try
-		{
-			$create_statement = "create table users (username varchar(32) primary key, md5 varchar(32), email varchar(64), status tinyint default 1, alert text) engine=InnoDB";
-		
-			$sth = $this->_dbh->prepare($create_statement);
-			$sth->execute();
-		}
-		catch( PDOException $exception )
-		{
-			error_log("create_user_table:" . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
-		}
-		
-	}
 }
 
 

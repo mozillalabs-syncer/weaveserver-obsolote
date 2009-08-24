@@ -1324,8 +1324,7 @@ class WeaveStorageSqlite implements WeaveStorage
 	function create_user()
 	{
 		$username_md5 = md5($this->_username);
-		
-		
+				
 		#make sure our path exists
 		$path = WEAVE_SQLITE_STORE_DIRECTORY . '/' . $username_md5{0};
 		if (!is_dir($path)) { mkdir ($path); }
@@ -1333,7 +1332,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		if (!is_dir($path)) { mkdir ($path); }
 		$path .= '/' . $username_md5{2};
 		if (!is_dir($path)) { mkdir ($path); }
-		
+
 		#create our user's db file
 		try
 		{

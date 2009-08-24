@@ -210,6 +210,7 @@
 			{
 				case 'password':
 					$new_password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
+
 					if (!verify_password_strength($new_password, $url_user))
 						report_problem("Bad password", 400);
 					
