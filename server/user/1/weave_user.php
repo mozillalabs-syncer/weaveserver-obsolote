@@ -1046,16 +1046,22 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 			throw new Exception("3", 404);
 		}
 		
+		$ch = array();
+		$ch["primaryNode"] = array();
+		
 		$ex = $this->getUserAttribute($username, "primaryNode");
 		for ($i = 0; $i < $ex["primaryNode"]["count"]; $i++)
 		{
 			$node = $ex["primaryNode"][$i];
-			if (substr($node, 0, 6) == "weave:")
-				$ex["primaryNode"][$i] = "weave:".$location;
+			if (substr($node, 0, 6) == "weave:") {
+				$ch["primaryNode"][] =  "weave:".$location;
+			} else {
+			    $ch["primaryNode"][] = $node;
+			}
 		}
 		
 		if (!ldap_mod_replace($this->_conn,
-			$this->constructUserDN($username), $ex))
+			$this->constructUserDN($username), $ch))
 		{
 			throw new Exception("Could not update location!", 503);
 		}
