@@ -133,16 +133,16 @@
 			{
 				case 'node':
 					if (defined('WEAVE_REGISTER_STORAGE_LOCATION'))
-						exit(json_encode(WEAVE_REGISTER_STORAGE_LOCATION));
+						exit('https://' . WEAVE_REGISTER_STORAGE_LOCATION . '/');
 					if ($location = $authdb->get_user_location($url_user))
-						exit(json_encode($location));					
+						exit('https://' . $location . '/');					
 					report_problem("No location", 404);
 				case 'none':
-					print json_encode($authdb->user_exists($url_user) ? 1: 0);
+					print $authdb->user_exists($url_user) ? 1: 0;
 					exit;
 				case 'email':
 					verify_user($url_user, $authdb);					
-					print json_encode($authdb->get_user_email($url_user));
+					print $authdb->get_user_email($url_user);
 					exit;
 				default:
 					report_problem("1", 400);
