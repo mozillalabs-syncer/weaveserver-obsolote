@@ -150,6 +150,11 @@
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #create a new user
 		{
+			$putdata = fopen("php://input", "r");
+			$jsonstring = '';
+			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
+			$json = json_decode($jsonstring, true);
+
 			if (!(defined('WEAVE_REGISTER_ADMIN_SECRET') 
 					&& array_key_exists('HTTP_X_WEAVE_SECRET', $_SERVER)
 					&& WEAVE_REGISTER_ADMIN_SECRET == $_SERVER['HTTP_X_WEAVE_SECRET']))
@@ -166,10 +171,6 @@
 				}
 			}
 
-			$putdata = fopen("php://input", "r");
-			$jsonstring = '';
-			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
-			$json = json_decode($jsonstring, true);
 
 			if (!preg_match('/^[A-Z0-9._-]+$/i', $url_user)) 
 				report_problem(3, 400);
