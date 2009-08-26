@@ -103,7 +103,7 @@
 		$auth_user = strtolower($auth_user);
 		
 		if ($auth_user != $url_user)
-			report_problem("5", 400);
+			report_problem(5, 400);
 
 		if (!$authdb->authenticate_user($auth_user, $auth_pw))
 			report_problem('Authentication failed', '401');
@@ -118,7 +118,7 @@
 	$url_user = strtolower($url_user);
 	
 	if (!$url_user)
-		report_problem('3', 400);
+		report_problem(3, 400);
 
 	if (!$action)
 		$action = 'none';
@@ -145,7 +145,7 @@
 					print $authdb->get_user_email($url_user);
 					exit;
 				default:
-					report_problem("1", 400);
+					report_problem(1, 400);
 			}
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'PUT') #create a new user
@@ -158,11 +158,11 @@
 				{
 					require_once 'recaptcha.php';
 					if (!$json['captcha-challenge'] || !$json['captcha-response'])
-						report_problem("2", 400);
+						report_problem(2, 400);
 					
 					$captcha_check = recaptcha_check_answer(RECAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'], $json['captcha-challenge'], $json['captcha-response']);
 					if (!$captcha_check->is_valid)
-						report_problem("2", 400);
+						report_problem(2, 400);
 				}
 			}
 
@@ -172,10 +172,10 @@
 			$json = json_decode($jsonstring, true);
 
 			if (!preg_match('/^[A-Z0-9._-]+$/i', $url_user)) 
-				report_problem("3", 400);
+				report_problem(3, 400);
 
 			if ($authdb->user_exists($url_user))
-				report_problem("4", 400);
+				report_problem(4, 400);
 
 
 			$password = $json['password'];
@@ -183,7 +183,7 @@
 
 			if (!verify_password_strength($password, $url_user))
 			{
-				report_problem("9", 400);
+				report_problem(9, 400);
 			}
 			
 			try
@@ -212,7 +212,7 @@
 					$new_password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
 
 					if (!verify_password_strength($new_password, $url_user))
-						report_problem("9", 400);
+						report_problem(9, 400);
 					
 					$authdb->update_password($url_user, $new_password);
 					exit("1");
@@ -221,7 +221,7 @@
 					$authdb->update_email($url_user, $new_email);
 					exit(json_encode($new_email));
 				default:
-					report_problem("1", 400);
+					report_problem(1, 400);
 			}			
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') #delete a user from the server. Need to delete their storage as well.

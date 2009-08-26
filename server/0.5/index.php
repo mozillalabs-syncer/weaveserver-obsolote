@@ -123,22 +123,22 @@
 	$auth_user = strtolower($auth_user);
 	
 	if (!$username)
-		report_problem('3', 400);
+		report_problem(3, 400);
 
 	if ($auth_user != $username)
-		report_problem("5", 401);
+		report_problem(5, 401);
 	
 	#quick check to make sure that any non-storage function calls are just using GET
 	if ($function != 'storage' && $_SERVER['REQUEST_METHOD'] != 'GET')
-		report_problem("1", 400);
+		report_problem(1, 400);
 	
 	#only a get has meaning without a collection (GET returns a collection list)
 	if (!$collection && $_SERVER['REQUEST_METHOD'] != 'GET')
-		report_problem("1", 400);
+		report_problem(1, 400);
 
 	#storage requires a collection to have been passed in. Info requires a directive
 	if (!$collection)
-		report_problem("1", 400);
+		report_problem(1, 400);
 
 	#Auth the user
 	try 
@@ -177,7 +177,7 @@
 				case 'collections':
 					exit(json_encode($db->get_collection_list_with_timestamps()));
 				default:
-					report_problem("1", 400);
+					report_problem(1, 400);
 			}
 		}
 		elseif ($function == 'storage')
@@ -250,7 +250,7 @@
 		
 		$wbo = new wbo();
 		if (!$wbo->extract_json($json))
-			report_problem("6", 400);
+			report_problem(6, 400);
 		
 		#all server-side tests pass. now need the db connection
 		try
@@ -264,7 +264,7 @@
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
 				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
-			report_problem("4", 412);	
+			report_problem(4, 412);	
 		
 		#use the url if the json object doesn't have an id
 		if (!$wbo->id() && $id) { $wbo->id($id); }
@@ -290,7 +290,7 @@
 		}
 		else
 		{
-			report_problem("8", 400);
+			report_problem(8, 400);
 		}
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'POST')
@@ -302,7 +302,7 @@
 		$json = json_decode($jsonstring, true);
 
 		if ($json === null)
-			report_problem("6", 400);
+			report_problem(6, 400);
 
 		#now need the db connection
 		try
@@ -316,7 +316,7 @@
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
 				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
-			report_problem("4", 412);	
+			report_problem(4, 412);	
 		
 		
 		$success_ids = array();
@@ -388,7 +388,7 @@
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
 				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
-			report_problem("4", 412);	
+			report_problem(4, 412);	
 
 		$timestamp = round(microtime(1), 2);
 		if ($id)
@@ -430,7 +430,7 @@
 	else
 	{
 		#bad protocol. There are protocols left? HEAD, I guess.
-		report_problem("1", 400);
+		report_problem(1, 400);
 	}
 		
 #The datasets we might be dealing with here are too large for sticking it all into an array, so
