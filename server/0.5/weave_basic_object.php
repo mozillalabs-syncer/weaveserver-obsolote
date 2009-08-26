@@ -158,6 +158,11 @@ class wbo
 	{
 		return array_key_exists('payload', $this->wbo_hash);
 	}
+
+	function payload_size()
+	{
+		return mb_strlen($this->wbo_hash['payload'], '8bit');
+	}
 	
 	function sortindex($index = null)
 	{

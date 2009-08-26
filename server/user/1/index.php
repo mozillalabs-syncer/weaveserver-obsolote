@@ -171,7 +171,7 @@
 			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
 			$json = json_decode($jsonstring, true);
 
-			if (!preg_match('/^[A-Z0-9._-]+/i', $url_user)) 
+			if (!preg_match('/^[A-Z0-9._-]+$/i', $url_user)) 
 				report_problem("3", 400);
 
 			if ($authdb->user_exists($url_user))

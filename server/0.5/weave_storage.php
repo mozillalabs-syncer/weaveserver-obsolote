@@ -300,10 +300,10 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'insert into ' . $this->_db_name . ' (username, id, collection, parentid, predecessorid, sortindex, modified, payload, depth) 
-					values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :depth)
+			$insert_stmt = 'insert into ' . $this->_db_name . ' (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size, depth) 
+					values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size, :depth)
 					on duplicate key update parentid = values(parentid), predecessorid = values(predecessorid), sortindex = values(sortindex), modified = values(modified),
-					payload = values(payload), depth = values(depth)';
+					payload = values(payload), payload_size = values(payload_size), depth = values(depth)';
 
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $this->_username);
@@ -314,6 +314,7 @@ class WeaveStorageMysql implements WeaveStorage
 			$sth->bindParam(':sortindex', $wbo->sortindex());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':payload', $wbo->payload());
+			$sth->bindParam(':payload_size', $wbo->payload_size());
 
 			$sth->bindParam(':depth', $wbo->depth());
 
@@ -370,7 +371,9 @@ class WeaveStorageMysql implements WeaveStorage
 		if ($wbo->payload_exists())
 		{
 			$update_list[] = "payload = ?";
+			$update_list[] = "payload_size = ?";
 			$params[] = $wbo->payload();
+			$params[] = $wbo->payload_size();
 		}
 		
 		# Don't modify the timestamp on a depth-only change. It's purely for sorting trees.
@@ -891,8 +894,8 @@ class WeaveStorageSqlite implements WeaveStorage
 		
 		try
 		{
-			$insert_stmt = 'replace into wbo (id, collection, parentid, predecessorid, sortindex, modified, payload, depth) 
-					values (:id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :depth)';
+			$insert_stmt = 'replace into wbo (id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size, depth) 
+					values (:id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size, :depth)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':id', $wbo->id());
 			$sth->bindParam(':collection', $wbo->collection());
@@ -902,8 +905,7 @@ class WeaveStorageSqlite implements WeaveStorage
 			$sth->bindParam(':sortindex', $wbo->sortindex());
 			$sth->bindParam(':modified', $wbo->modified());
 			$sth->bindParam(':payload', $wbo->payload());
-
-			$sth->bindParam(':depth', $wbo->depth());
+			$sth->bindParam(':payload_size', $wbo->payload_size());
 
 			$sth->execute();
 
@@ -932,32 +934,34 @@ class WeaveStorageSqlite implements WeaveStorage
 
 		if ($wbo->parentid_exists())
 		{
-			$update_list[] = " parentid = ?";
+			$update_list[] = "parentid = ?";
 			$params[] = $wbo->parentid();
 		}
 
 		if ($wbo->parentid_exists())
 		{
-			$update_list[] = " predecessorid = ?";
+			$update_list[] = "predecessorid = ?";
 			$params[] = $wbo->predecessorid();
 		}
 		
 		if ($wbo->depth_exists())
 		{
-			$update_list[] = " depth = ?";
+			$update_list[] = "depth = ?";
 			$params[] = $wbo->depth();
 		}
 		
 		if ($wbo->sortindex_exists())
 		{
-			$update_list[] = " sortindex = ?";
+			$update_list[] = "sortindex = ?";
 			$params[] = $wbo->sortindex();
 		}
 
 		if ($wbo->payload_exists())
 		{
 			$update_list[] = "payload = ?";
+			$update_list[] = "payload_size = ?";
 			$params[] = $wbo->payload();
+			$params[] = $wbo->payload_size();
 		}
 
 		# Don't modify the timestamp on a depth-only change
@@ -969,7 +973,7 @@ class WeaveStorageSqlite implements WeaveStorage
 				error_log("Called update_object with no defined timestamp. Please check");
 				$wbo->modified(microtime(1));
 			}
-			$update_list[] = " modified = ?";
+			$update_list[] = "modified = ?";
 			$params[] = $wbo->modified();
 
 		}
