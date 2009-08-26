@@ -183,7 +183,7 @@
 
 			if (!verify_password_strength($password, $url_user))
 			{
-				report_problem("Bad password", 400);
+				report_problem("9", 400);
 			}
 			
 			try
@@ -212,7 +212,7 @@
 					$new_password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
 
 					if (!verify_password_strength($new_password, $url_user))
-						report_problem("Bad password", 400);
+						report_problem("9", 400);
 					
 					$authdb->update_password($url_user, $new_password);
 					exit("1");
