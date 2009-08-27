@@ -42,7 +42,6 @@ require_once 'weave_user_constants.php';
 
 function get_auth_object()
 {
-error_log(WEAVE_AUTH_ENGINE);
 	switch(WEAVE_AUTH_ENGINE)
 	{
 		case 'mysql':

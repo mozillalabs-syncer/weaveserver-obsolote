@@ -177,19 +177,21 @@ sub user_work
 			print "check user existence: $result\n" if $VERBOSE;
 			
 			#change the password
-			$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX/$USERNAME/password", ['password' => $PASSWORD . '2'];
+			$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX/$USERNAME/password";
 			$req->authorization_basic($USERNAME, $PASSWORD);
 			$PASSWORD .= "2";
-			
+			$req->content($PASSWORD);
+
 			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
 			print "change the password: $result\n" if $VERBOSE;
 			$timearray[0] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 			
 			#change email 
-			$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX/$USERNAME/email", ['email' => 'changetest@test.com'];
+			$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX/$USERNAME/email";
 			$req->authorization_basic($USERNAME, $PASSWORD);
-
+			$req->content('changetest@test.com');
+			
 			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
 			print "change the email: $result\n" if $VERBOSE;

@@ -229,7 +229,7 @@
 					fclose($postdata);
 
 					$authdb->update_email($url_user, $new_email);
-					exit(json_encode($new_email));
+					exit($new_email);
 				default:
 					report_problem(1, 400);
 			}			
