@@ -156,6 +156,7 @@
 			$putdata = fopen("php://input", "r");
 			$jsonstring = '';
 			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
+			fclose($putdata);
 			$json = json_decode($jsonstring, true);
 
 			if (!(defined('WEAVE_REGISTER_ADMIN_SECRET') 
@@ -213,15 +214,20 @@
 			switch($action)
 			{
 				case 'password':
-					$new_password = array_key_exists('password', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['password']) : $_POST['password']) : null;
-
+					$postdata = fopen("php://input", "r");
+					$new_password = fread($postdata,2048);
+					fclose($postdata);
+					
 					if (!verify_password_strength($new_password, $url_user))
 						report_problem(9, 400);
 					
 					$authdb->update_password($url_user, $new_password);
 					exit("1");
 				case 'email':
-					$new_email = array_key_exists('email', $_POST) ? (ini_get('magic_quotes_gpc') ? stripslashes($_POST['email']) : $_POST['email']) : null;
+					$putdata = fopen("php://input", "r");
+					$new_email = fread($putdata,2048);
+					fclose($postdata);
+
 					$authdb->update_email($url_user, $new_email);
 					exit(json_encode($new_email));
 				default:
