@@ -100,6 +100,9 @@
 			}
 		}
 
+		if (!$auth_user) #do this first to avoid the cryptic error message if auth is missing
+			report_problem('Authentication failed', '401');
+
 		$auth_user = strtolower($auth_user);
 		
 		if ($auth_user != $url_user)
