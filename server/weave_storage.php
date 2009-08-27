@@ -336,6 +336,13 @@ class WeaveStorageMysql implements WeaveStorage
 
 		}
 		
+		##HACK: not saving depth/sort for now - they're killing the server and going away soon.
+		if (!($wbo->parentid_exists() || $wbo->payload_exists()))
+		{
+			return 0;
+		}
+		
+		
 		if (count($params) == 0)
 		{
 			return 0;
