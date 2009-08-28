@@ -282,6 +282,7 @@ create table wbo
  sortindex int,
  depth int,
  payload text,
+ payload_size int,
  primary key (collection,id)
 )
 end;

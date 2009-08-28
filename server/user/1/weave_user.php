@@ -327,7 +327,6 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		{
 			throw new Exception("3", 404);
 		}
-error_log("here");
 		try
 		{
 			$insert_stmt = 'update users set location = :location where username = :username';
