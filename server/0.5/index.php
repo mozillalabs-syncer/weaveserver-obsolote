@@ -208,12 +208,12 @@
 				{
 					if (preg_match('/application\/whoisi/', $_SERVER['HTTP_ACCEPT']))
 					{
-						header("Content-type: application/text");
+						header("Content-type: application/whoisi");
 						$outputter->set_format('whoisi');
 					}
 					elseif (preg_match('/application\/newlines/', $_SERVER['HTTP_ACCEPT']))
 					{
-						header("Content-type: application/text");
+						header("Content-type: application/newlines");
 						$outputter->set_format('newlines');
 					}
 					
