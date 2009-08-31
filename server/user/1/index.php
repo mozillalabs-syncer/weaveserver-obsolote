@@ -159,6 +159,9 @@
 			fclose($putdata);
 			$json = json_decode($jsonstring, true);
 
+			if ($json === null)
+				report_problem(6, 400);
+
 			if (!(defined('WEAVE_REGISTER_ADMIN_SECRET') 
 					&& array_key_exists('HTTP_X_WEAVE_SECRET', $_SERVER)
 					&& WEAVE_REGISTER_ADMIN_SECRET == $_SERVER['HTTP_X_WEAVE_SECRET']))
