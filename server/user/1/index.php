@@ -157,7 +157,7 @@
 			$jsonstring = '';
 			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
 			fclose($putdata);
-			$json = json_decode($jsonstring, true);
+			$json = json_decode(utf8_encode($jsonstring), true);
 
 			if ($json === null)
 				report_problem(6, 400);
