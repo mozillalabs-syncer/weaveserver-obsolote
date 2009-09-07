@@ -394,6 +394,14 @@ sub user_work
 		print "mixed batch upload (bad parentids on some): $result\n" if $VERBOSE;
 		
 		
+		# get collection timestamp list
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/info/collections";
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
+		$result = $ua->request($req)->content();
+		$timearray[17] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+		print "should return {\"test\":<timestamp>}: $result\n" if $VERBOSE;
+		
 		# should return ["1", "2" .. "20"]
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/";
 		$req->authorization_basic($USERNAME, $PASSWORD);

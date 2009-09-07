@@ -175,7 +175,8 @@
 				case 'quota':
 					exit(json_encode(array($db->get_storage_total(), $db->get_user_quota())));
 				case 'collections':
-					exit(json_encode($db->get_collection_list_with_timestamps()));
+					$collection_store = new WeaveCollectionTimestamps($username, $db);
+					exit(json_encode($collection_store->get_collection_timestamps()));
 				default:
 					report_problem(1, 400);
 			}
@@ -262,8 +263,10 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
+		$collection_store = new WeaveCollectionTimestamps($username, $db);
+
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
-				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+				&& $collection_store->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
 			report_problem(4, 412);	
 		
 		#use the url if the json object doesn't have an id
@@ -271,7 +274,7 @@
 		
 		$wbo->collection($collection);
 		$wbo->modified($server_time); #current microtime
-
+		
 		if ($wbo->validate())
 		{
 			try
@@ -292,6 +295,9 @@
 		{
 			report_problem(8, 400);
 		}
+		
+		$collection_store->memc_update($collection, $server_time);
+				
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'POST')
 	{
@@ -314,8 +320,10 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
+		$collection_store = new WeaveCollectionTimestamps($username, $db);
+
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
-				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+				&& $collection_store->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
 			report_problem(4, 412);	
 		
 		
@@ -372,6 +380,8 @@
 			}
 		}
 		$db->commit_transaction();
+
+		$collection_store->memc_update($collection, $server_time);
 		
 		echo json_encode(array('success' => $success_ids, 'failed' => $failed_ids));
 	}
@@ -386,8 +396,10 @@
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
+		$collection_store = new WeaveCollectionTimestamps($username, $db);
+
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
-				&& $db->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+				&& $collection_store->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
 			report_problem(4, 412);	
 
 		$timestamp = round(microtime(1), 2);
@@ -426,13 +438,99 @@
 			}
 			echo json_encode($timestamp);
 		}
+
+		$collection_store->memc_update($collection, $server_time);
 	}
 	else
 	{
 		#bad protocol. There are protocols left? HEAD, I guess.
 		report_problem(1, 400);
 	}
+
+
+class WeaveCollectionTimestamps
+{
+	private $_memc = null;
+	private $_username = null;
+	private $_collections = null;
+	private $_db = null;
+	
+	function __construct ($username, $db)
+	{
+		$this->_username = $username;
+		$this->_db = $db;
 		
+		if (defined('WEAVE_STORAGE_MEMCACHE_PORT') && WEAVE_STORAGE_MEMCACHE_PORT)
+		{
+			$this->_memc = new Memcache;
+			try
+			{
+				$this->_memc->connect('localhost', WEAVE_STORAGE_MEMCACHE_PORT);
+			}			
+			catch( Exception $exception )
+			{
+				error_log($exception->getMessage());
+				$this->_memc = null;
+			}				
+		}
+	}
+	
+	function get_max_timestamp($collection)
+	{
+		if ($this->_memc) #to our advantage to leverage the collection object we'll be updating soon.
+		{
+			$this->memc_retrieve();
+			return $this->_collections[$collection];
+		}
+		else
+		{
+			return $this->_db->get_max_timestamp($collection);
+		}
+	}
+	
+	function get_collection_timestamps()
+	{
+		$this->memc_retrieve();
+		return $this->_collections;
+	}
+	
+	function memc_retrieve()
+	{
+		if ($this->_collections)
+			return $this->_collections;
+			
+		if ($this->_memc)
+		{
+			if ($collections = $this->_memc->get('coll:' . $this->_username))
+			{
+				$this->_collections = $collections;
+				return;
+			}
+		}	
+		
+		$collections = $this->_db->get_collection_list_with_timestamps();
+		
+		$this->_collections = $collections;
+		$this->memc_set();
+	}
+	
+	function memc_update($collection, $timestamp)
+	{
+		if ($this->_memc)
+		{
+			$this->memc_retrieve();
+			$this->_collections[$collection] = $timestamp;
+			$this->memc_set();
+		}	
+	}
+	
+	function memc_set()
+	{
+		if ($this->_memc && $this->_collections)
+			$this->_memc->set('coll:' . $this->_username, $this->_collections, false, WEAVE_STORAGE_MEMCACHE_DECAY);	
+	}
+}
+
 #The datasets we might be dealing with here are too large for sticking it all into an array, so
 #we need to define a direct-output method for the storage class to use. If we start producing multiples
 #(unlikely), we can put them in their own class.

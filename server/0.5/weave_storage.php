@@ -289,7 +289,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$collections = array();
 		while ($result = $sth->fetch(PDO::FETCH_NUM))
 		{
-			$collections[$result[0]] = $result[1];
+			$collections[$result[0]] = (float)$result[1];
 		}
 		
 		return $collections;		
@@ -883,7 +883,7 @@ class WeaveStorageSqlite implements WeaveStorage
 		$collections = array();
 		while ($result = $sth->fetch(PDO::FETCH_NUM))
 		{
-			$collections[$result[0]] = $result[1];
+			$collections[$result[0]] = (float)$result[1];
 		}
 		
 		return $collections;		
