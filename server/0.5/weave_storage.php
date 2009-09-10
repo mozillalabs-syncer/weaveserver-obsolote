@@ -97,6 +97,8 @@ interface WeaveStorage
 	
 	function get_collection_list_with_timestamps();
 
+	function get_collection_list_with_counts();
+
 	function store_object(&$wbo);
 	
 	function delete_object($collection, $id);
@@ -290,6 +292,31 @@ class WeaveStorageMysql implements WeaveStorage
 		while ($result = $sth->fetch(PDO::FETCH_NUM))
 		{
 			$collections[$result[0]] = (float)$result[1];
+		}
+		
+		return $collections;		
+	}
+	
+	function get_collection_list_with_counts()
+	{
+		try
+		{
+			$select_stmt = 'select collection, count(*) as ct from ' . $this->_db_name . ' where username = :username group by collection';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_collection_list_with_counts: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		
+		
+		$collections = array();
+		while ($result = $sth->fetch(PDO::FETCH_NUM))
+		{
+			$collections[$result[0]] = (int)$result[1];
 		}
 		
 		return $collections;		
@@ -884,6 +911,31 @@ class WeaveStorageSqlite implements WeaveStorage
 		while ($result = $sth->fetch(PDO::FETCH_NUM))
 		{
 			$collections[$result[0]] = (float)$result[1];
+		}
+		
+		return $collections;		
+	}
+
+	function get_collection_list_with_counts()
+	{
+		try
+		{
+			$select_stmt = 'select collection, count(*) as ct from wbo group by collection';
+			$sth = $this->_dbh->prepare($select_stmt);
+			$sth->bindParam(':username', $this->_username);
+			$sth->execute();
+		}
+		catch( PDOException $exception )
+		{
+			error_log("get_collection_list_with_counts: " . $exception->getMessage());
+			throw new Exception("Database unavailable", 503);
+		}
+		
+		
+		$collections = array();
+		while ($result = $sth->fetch(PDO::FETCH_NUM))
+		{
+			$collections[$result[0]] = (int)$result[1];
 		}
 		
 		return $collections;		

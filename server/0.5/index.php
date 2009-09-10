@@ -177,6 +177,8 @@
 				case 'collections':
 					$collection_store = new WeaveCollectionTimestamps($username, $db);
 					exit(json_encode($collection_store->get_collection_timestamps()));
+				case 'collection_counts':
+					exit(json_encode($db->get_collection_list_with_counts()));
 				default:
 					report_problem(1, 400);
 			}

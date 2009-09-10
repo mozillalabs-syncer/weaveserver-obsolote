@@ -402,6 +402,14 @@ sub user_work
 		$timearray[17] += tv_interval($time1, [gettimeofday()]) if $TIMING;
 		print "should return {\"test\":<timestamp>}: $result\n" if $VERBOSE;
 		
+		# get collection count list
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/info/collection_counts";
+		$req->authorization_basic($USERNAME, $PASSWORD);
+		$time1 = [gettimeofday()] if $TIMING;
+		$result = $ua->request($req)->content();
+		$timearray[17] += tv_interval($time1, [gettimeofday()]) if $TIMING;
+		print "should return {\"test\":20}: $result\n" if $VERBOSE;
+		
 		# should return ["1", "2" .. "20"]
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/";
 		$req->authorization_basic($USERNAME, $PASSWORD);
