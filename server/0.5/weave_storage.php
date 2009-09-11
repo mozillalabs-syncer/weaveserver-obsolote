@@ -922,7 +922,6 @@ class WeaveStorageSqlite implements WeaveStorage
 		{
 			$select_stmt = 'select collection, count(*) as ct from wbo group by collection';
 			$sth = $this->_dbh->prepare($select_stmt);
-			$sth->bindParam(':username', $this->_username);
 			$sth->execute();
 		}
 		catch( PDOException $exception )
@@ -1412,7 +1411,7 @@ end;
 
 			$index1 = 'create index idindex on wbo (id)';
 			$index2 = 'create index parentindex on wbo (parentid)';
-			$index3 = 'create index predecessorindex on wbo (predecessor)';
+			$index3 = 'create index predecessorindex on wbo (predecessorid)';
 			$index4 = 'create index modifiedindex on wbo (modified)';
 		
 		
