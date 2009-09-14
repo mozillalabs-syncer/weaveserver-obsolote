@@ -149,6 +149,7 @@
 	}
 	catch(Exception $e)
 	{
+		header("X-Weave-Backoff: 1800");
 		report_problem($e->getMessage(), $e->getCode());
 	}
 
@@ -165,6 +166,7 @@
 		}
 		catch(Exception $e)
 		{
+			header("X-Weave-Backoff: 1800");
 			report_problem($e->getMessage(), $e->getCode());
 		}
 		
@@ -262,6 +264,7 @@
 		}
 		catch(Exception $e)
 		{
+			header("X-Weave-Backoff: 1800");
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
@@ -319,6 +322,7 @@
 		}
 		catch(Exception $e)
 		{
+			header("X-Weave-Backoff: 1800");
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
@@ -395,6 +399,7 @@
 		}
 		catch(Exception $e)
 		{
+			header("X-Weave-Backoff: 1800");
 			report_problem($e->getMessage(), $e->getCode());
 		}
 
