@@ -286,7 +286,10 @@
 			{
 				#if there's no payload (as opposed to blank), then update the metadata
 				if ($wbo->payload_exists())
-					$db->store_object($wbo);
+				{
+					$wbos = array($wbo);
+					$db->store_object($wbos);
+				}
 				else
 					$db->update_object($wbo);
 			}
@@ -335,6 +338,7 @@
 		
 		$success_ids = array();
 		$failed_ids = array();
+		$wbos = array();
 		
 		
 		try
@@ -349,6 +353,7 @@
 		foreach ($json as $wbo_data)
 		{
 			$wbo = new wbo();
+			
 			if (!$wbo->extract_json($wbo_data))
 			{
 				$failed_ids[$wbo->id()] = $wbo->get_error();
@@ -358,7 +363,7 @@
 			$wbo->collection($collection);
 			$wbo->modified($server_time);
 			
-
+			
 			if ($wbo->validate())
 			{
 				try
@@ -366,7 +371,7 @@
 					#if there's no payload (as opposed to blank), then update the metadata
 					if ($wbo->payload_exists())
 					{
-						$db->store_object($wbo);
+						$wbos[] = $wbo;
 					}
 					else
 					{
@@ -385,6 +390,22 @@
 				$failed_ids[$wbo->id()] = $wbo->get_error();
 			}
 		}
+		
+		while (count($wbos))
+		{
+			$wbos_slice = array_splice($wbos, 0, 100);
+			try
+			{
+				$db->store_object($wbos_slice);
+			}
+			catch (Exception $e)
+			{
+				foreach($wbos as $wbo)
+					$failed_ids[$wbo->id()] = $e->getMessage();
+				continue;
+			}
+		}		
+		
 		$db->commit_transaction();
 
 		$collection_store->memc_update($collection, $server_time);

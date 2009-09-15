@@ -227,8 +227,8 @@
 					$authdb->update_password($url_user, $new_password);
 					exit("1");
 				case 'email':
-					$putdata = fopen("php://input", "r");
-					$new_email = fread($putdata,2048);
+					$postdata = fopen("php://input", "r");
+					$new_email = fread($postdata,2048);
 					fclose($postdata);
 
 					$authdb->update_email($url_user, $new_email);

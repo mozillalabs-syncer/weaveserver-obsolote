@@ -99,7 +99,7 @@ interface WeaveStorage
 
 	function get_collection_list_with_counts();
 
-	function store_object(&$wbo);
+	function store_object(&$wbos);
 	
 	function delete_object($collection, $id);
 	
@@ -322,30 +322,34 @@ class WeaveStorageMysql implements WeaveStorage
 		return $collections;		
 	}
 	
-	function store_object(&$wbo) 
+	function store_object(&$wbos) 
 	{
 		
+		$insert_stmt = 'insert into ' . $this->_db_name . ' (username, id, collection, parentid, 
+						predecessorid, sortindex, modified, payload, payload_size, depth) values ';
+
+		$param_string = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+		$params = array();
+		$values = array();
+		
+		foreach ($wbos as $wbo)
+		{
+			array_push($params, $param_string);
+			array_push($values, $this->_username, $wbo->id(), $wbo->collection(), $wbo->parentid(),
+							$wbo->predecessorid(), $wbo->sortindex(), $wbo->modified(), 
+							$wbo->payload(), $wbo->payload_size(), $wbo->depth());
+		}
+		
+		$insert_stmt .= implode(',', $params);
+		
+		$insert_stmt .= ' on duplicate key update parentid = values(parentid), 
+						predecessorid = values(predecessorid), sortindex = values(sortindex), 
+						modified = values(modified), payload = values(payload), 
+						payload_size = values(payload_size), depth = values(depth)';
 		try
 		{
-			$insert_stmt = 'insert into ' . $this->_db_name . ' (username, id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size, depth) 
-					values (:username, :id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size, :depth)
-					on duplicate key update parentid = values(parentid), predecessorid = values(predecessorid), sortindex = values(sortindex), modified = values(modified),
-					payload = values(payload), payload_size = values(payload_size), depth = values(depth)';
-
 			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':username', $this->_username);
-			$sth->bindParam(':id', $wbo->id());
-			$sth->bindParam(':collection', $wbo->collection());
-			$sth->bindParam(':parentid', $wbo->parentid());
-			$sth->bindParam(':predecessorid', $wbo->predecessorid());
-			$sth->bindParam(':sortindex', $wbo->sortindex());
-			$sth->bindParam(':modified', $wbo->modified());
-			$sth->bindParam(':payload', $wbo->payload());
-			$sth->bindParam(':payload_size', $wbo->payload_size());
-
-			$sth->bindParam(':depth', $wbo->depth());
-
-			$sth->execute();
+			$sth->execute($values);
 		}
 		catch( PDOException $exception )
 		{
@@ -355,7 +359,7 @@ class WeaveStorageMysql implements WeaveStorage
 		return 1;
 	
 	}
-	
+
 	function update_object(&$wbo)
 	{
 		$update = 'update ' . $this->_db_name . ' set ';
@@ -940,31 +944,34 @@ class WeaveStorageSqlite implements WeaveStorage
 		return $collections;		
 	}
 
-	function store_object(&$wbo)
+	function store_object(&$wbos)
 	{
+		$insert_stmt = 'replace into wbo (id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size, depth) 
+				values (:id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size, :depth)';
+		$sth = $this->_dbh->prepare($insert_stmt);
 		
-		try
+		foreach ($wbos as $wbo)
 		{
-			$insert_stmt = 'replace into wbo (id, collection, parentid, predecessorid, sortindex, modified, payload, payload_size, depth) 
-					values (:id, :collection, :parentid, :predecessorid, :sortindex, :modified, :payload, :payload_size, :depth)';
-			$sth = $this->_dbh->prepare($insert_stmt);
-			$sth->bindParam(':id', $wbo->id());
-			$sth->bindParam(':collection', $wbo->collection());
-			$sth->bindParam(':parentid', $wbo->parentid());
-			$sth->bindParam(':predecessorid', $wbo->predecessorid());
-			$sth->bindParam(':depth', $wbo->depth());
-			$sth->bindParam(':sortindex', $wbo->sortindex());
-			$sth->bindParam(':modified', $wbo->modified());
-			$sth->bindParam(':payload', $wbo->payload());
-			$sth->bindParam(':payload_size', $wbo->payload_size());
-
-			$sth->execute();
-
-		}
-		catch( PDOException $exception )
-		{
-			error_log("store_object: " . $exception->getMessage());
-			throw new Exception("Database unavailable", 503);
+			try
+			{
+				$sth->bindParam(':id', $wbo->id());
+				$sth->bindParam(':collection', $wbo->collection());
+				$sth->bindParam(':parentid', $wbo->parentid());
+				$sth->bindParam(':predecessorid', $wbo->predecessorid());
+				$sth->bindParam(':depth', $wbo->depth());
+				$sth->bindParam(':sortindex', $wbo->sortindex());
+				$sth->bindParam(':modified', $wbo->modified());
+				$sth->bindParam(':payload', $wbo->payload());
+				$sth->bindParam(':payload_size', $wbo->payload_size());
+	
+				$sth->execute();
+	
+			}
+			catch( PDOException $exception )
+			{
+				error_log("store_object: " . $exception->getMessage());
+				throw new Exception("Database unavailable", 503);
+			}
 		}
 		return 1;
 	}

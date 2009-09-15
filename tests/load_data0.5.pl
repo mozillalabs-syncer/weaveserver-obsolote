@@ -419,20 +419,12 @@ sub user_work
 		print "should return [\"1\", \"2\" .. \"20\"] (in some order): $result\n" if $VERBOSE;
 		
 		# should return ["1", "2" .. "20"]
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?sort=index";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?sort=oldest";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
 		$timearray[18] += tv_interval($time1, [gettimeofday()]) if $TIMING;
-		print "should return [\"1\", \"2\" .. \"20\"] (in order): $result\n" if $VERBOSE;
-		
-		# should return ["1", "2" .. "20"]
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?sort=depthindex";
-		$req->authorization_basic($USERNAME, $PASSWORD);
-		$time1 = [gettimeofday()] if $TIMING;
-		$result = $ua->request($req)->content();
-		$timearray[19] += tv_interval($time1, [gettimeofday()]) if $TIMING;
-		print "should return [\"1\", \"2\" .. \"20\"] (3 at end): $result\n" if $VERBOSE;
+		print "should return in order of upload/modified: $result\n" if $VERBOSE;
 		
 		# should return the user id record for #3 (check the depth)
 		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/3";
