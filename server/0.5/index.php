@@ -466,8 +466,6 @@
 			}
 			echo json_encode($timestamp);
 		}
-
-		$collection_store->memc_update($collection, $server_time);
 	}
 	else
 	{
