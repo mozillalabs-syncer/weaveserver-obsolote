@@ -347,6 +347,54 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 	
 	}
 
+	function get_new_node_location($username)
+	{
+		if (defined('WEAVE_REGISTRATION_THROTTLE_DB'))
+		{
+			try
+			{
+				$select_stmt = 'select node from available_nodes where ct > 0 order by rand() limit 1';
+				$sth = $this->_dbh->prepare($select_stmt);
+				$sth->execute();
+			}
+			catch( PDOException $exception )
+			{
+				error_log("get_new_node_location: " . $exception->getMessage());
+				throw new Exception("Database unavailable", 503);
+			}
+			
+			if (!$result = $sth->fetchColumn())
+			{
+				return false;
+			}
+			
+			try
+			{
+				$insert_stmt = 'update available_nodes set ct = ct - 1 where node = ?';
+				$sth = $this->_dbh->prepare($insert_stmt);
+				$sth->execute(array($result));
+			}
+			catch( PDOException $exception )
+			{
+				error_log("get_new_node_location: " . $exception->getMessage());
+				throw new Exception("Database unavailable", 503);
+			}
+			
+			return $result;
+			
+		}
+		elseif (defined('WEAVE_REGISTER_NODE'))
+		{
+			$nodes = explode(':', WEAVE_REGISTER_NODE);
+		
+			if (count($nodes) > 1)
+				return $nodes[rand(0,count($nodes) - 1)];
+			else
+				return WEAVE_REGISTER_NODE;
+		}
+		return false;
+	}
+
 	function user_exists($username) 
 	{
 		try
@@ -466,6 +514,19 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		}
 
 		$result = $sth->fetchColumn();
+		
+		if ($result)
+			return 'https://' . $result . '/';
+		
+		if ($result === false)
+			return $result;
+		
+		if ($new_node = $this->get_new_node_location($username))
+		{
+			$this->update_location($username, $new_node);
+			return 'https://' . $new_node . '/';
+		}
+
 		return $result;
 	}
 
@@ -579,7 +640,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, ' . (WEAVE_REGISTER_NODE ? WEAVE_REGISTER_NODE : '""') . ', 1)';
+			$insert_stmt = 'insert into users (username, md5, email, status) values (:username, :md5, :email, 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
@@ -955,8 +1016,8 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		$record = array(
 			'cn' => $username,
 			'sn' => $username,
-			'primaryNode' => 'weave:'. WEAVE_REGISTER_NODE,
-			'rescueNode' => 'weave:'. WEAVE_REGISTER_NODE,
+			'primaryNode' => 'weave:',
+			'rescueNode' => 'weave:',
 			'uid' => $username,
 			'userPassword' => $this->generateSSHAPassword($password),
 			'mail-verified' => $key,
@@ -980,11 +1041,83 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		{
 			$node = $va["primaryNode"][$i];
 			if (substr($node, 0, 6) == "weave:")
-				return substr($node, 6);
+			{
+				if (substr($node, 6))
+					return substr($node, 6);
+				if ($new_node = $this->get_new_node_location($username))
+				{
+					$this->update_location($username, $new_node);
+					return $new_node;
+				}
+			}
 		}
 		return false;
 	}
 
+	function get_new_node_location($username)
+	{
+		if (defined('WEAVE_REGISTRATION_THROTTLE_DB'))
+		{
+			$hostname = WEAVE_REGISTRATION_THROTTLE_HOST;
+			$dbname = WEAVE_REGISTRATION_THROTTLE_DB;
+			$dbuser = WEAVE_REGISTRATION_THROTTLE_USER;
+			$dbpass = WEAVE_REGISTRATION_THROTTLE_PASS;
+			
+			try
+			{
+				$this->_dbh = new PDO('mysql:host=' . $hostname . ';dbname=' . $dbname, $dbuser, $dbpass);
+				$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			}
+			catch( PDOException $exception )
+			{
+					error_log($exception->getMessage());
+					throw new Exception("Database unavailable", 503);
+			}
+			
+			try
+			{
+				$select_stmt = 'select node from available_nodes where ct > 0 order by rand() limit 1';
+				$sth = $this->_dbh->prepare($select_stmt);
+				$sth->execute();
+			}
+			catch( PDOException $exception )
+			{
+				error_log("get_new_node_location: " . $exception->getMessage());
+				throw new Exception("Database unavailable", 503);
+			}
+			
+			if (!$result = $sth->fetchColumn())
+			{
+				return false;
+			}
+			
+			try
+			{
+				$insert_stmt = 'update available_nodes set ct = ct - 1 where node = ?';
+				$sth = $this->_dbh->prepare($insert_stmt);
+				$sth->execute(array($result));
+			}
+			catch( PDOException $exception )
+			{
+				error_log("get_new_node_location: " . $exception->getMessage());
+				throw new Exception("Database unavailable", 503);
+			}
+			
+			return $result;
+			
+		}
+		elseif (defined('WEAVE_REGISTER_NODE'))
+		{
+			$nodes = explode(':', WEAVE_REGISTER_NODE);
+		
+			if (count($nodes) > 1)
+				return $nodes[rand(0,count($nodes) - 1)];
+			else
+				return WEAVE_REGISTER_NODE;
+		}
+		return false;
+	}
+	
 	function get_user_email($username)
 	{
 		if (!$username)

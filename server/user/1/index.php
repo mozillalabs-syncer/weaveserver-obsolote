@@ -137,9 +137,10 @@
 				case 'node':
 					if (defined('WEAVE_REGISTER_STORAGE_LOCATION'))
 						exit('https://' . WEAVE_REGISTER_STORAGE_LOCATION . '/');
-					if ($location = $authdb->get_user_location($url_user))
-						exit('https://' . $location . '/');					
-					report_problem("No location", 404);
+					$location = $authdb->get_user_location($url_user);
+					if ($location === false)
+						report_problem("No location", 404);
+					exit($location);					
 				case 'none':
 					print $authdb->user_exists($url_user) ? 1: 0;
 					exit;
