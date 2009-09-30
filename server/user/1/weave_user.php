@@ -843,7 +843,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 		}
 
 		$result = $sth->fetchColumn();
-		return $result;
+		return 'https://' . $result . '/';
 	}
 
 	function get_user_email($username)
@@ -1043,11 +1043,11 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 			if (substr($node, 0, 6) == "weave:")
 			{
 				if (substr($node, 6))
-					return substr($node, 6);
+					return 'https://' . substr($node, 6) . '/';
 				if ($new_node = $this->get_new_node_location($username))
 				{
 					$this->update_location($username, $new_node);
-					return $new_node;
+					return 'https://' . $new_node . '/';
 				}
 			}
 		}
