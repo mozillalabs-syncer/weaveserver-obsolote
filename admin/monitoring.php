@@ -22,7 +22,7 @@ $config = json_decode($json, true);
 if (!$config)
 	exit("cannot read config json");
 
-$cluster_conf = $config[$argv[1]];
+$cluster_conf = $config[$argv[2]];
 
 echo $cluster_conf['monitor_host'] . "\n";
 
@@ -99,8 +99,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	#step 2: for each user, get last update. If greater than the timestamp above, fetch their row and datasize values
 	$last_update = $dbh->prepare("select max(modified) from " . $db_table . " where username = ?");
 	$rows = $dbh->prepare("select count(*) as ct, sum(payload_size)/1024 as size from " . $db_table . " where username = ?");
-	$delete_forms = $dbh->prepare("delete from " . $db_table . " where username = ? and collection = 'forms' and modified < ?");
-	$delete_history = $dbh->prepare("delete from " . $db_table . " where username = ? and collection = 'history' and modified < ?");
+	$delete_statement = $dbh->prepare("delete from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or payload is NULL)");
 
 	$data = $dbhw->prepare("replace into usersummary values (?,?,?,?,NOW(),?)");
 	
@@ -113,10 +112,8 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 		
 		if ($last_update && !array_key_exists($user, $user_ts) || $last != $user_ts[$user])
 		{
-			$delete_forms->execute(array($user, $deletetime));
-			echo $delete_forms->rowCount() . ' - ';
-			$delete_history->execute(array($user, $deletetime));
-			echo $delete_history->rowCount();
+			$delete_statement->execute(array($user, $deletetime));
+			echo $delete_statement->rowCount();
 			$rows->execute(array($user));
 			list ($count, $datasize) = $rows->fetch();
 			$rows->closeCursor();
@@ -175,9 +172,9 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 }
 
 #step 6: Write the data files
-if ($argv[2])
+if ($argv[3])
 {
-	$data_out = fopen($argv[2] . '/users.txt', 'w');
+	$data_out = fopen($argv[3] . '/users.txt', 'w');
 	if (!$data_out)
 		echo "cannot open users.txt";
 	
@@ -203,7 +200,7 @@ if ($argv[2])
 		fwrite($data_out, "$date " . ($values[0] ? $values[0] : "0") . " " . ($values[1] ? $values[1] : "0") . "\n");
 	fclose ($data_out);
 	
-	$data_out = fopen($argv[2] . '/payload.txt', 'w');
+	$data_out = fopen($argv[3] . '/payload.txt', 'w');
 	if (!$data_out)
 		echo "cannot open payload.txt";
 	

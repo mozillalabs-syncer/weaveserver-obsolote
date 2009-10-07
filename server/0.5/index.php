@@ -256,6 +256,10 @@
 		$wbo = new wbo();
 		if (!$wbo->extract_json($json))
 			report_problem(6, 400);
+
+		if (defined('WEAVE_DATA_PROFILE'))
+			error_log('PUT payload: ' . $json);
+			
 		
 		#all server-side tests pass. now need the db connection
 		try
@@ -313,10 +317,14 @@
 		$putdata = fopen("php://input", "r");
 		$jsonstring = '';
 		while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
+
 		$json = json_decode($jsonstring, true);
 
 		if ($json === null)
 			report_problem(6, 400);
+
+		if (defined('WEAVE_DATA_PROFILE'))
+			error_log('POST payload: ' . $jsonstring);
 
 		#now need the db connection
 		try
