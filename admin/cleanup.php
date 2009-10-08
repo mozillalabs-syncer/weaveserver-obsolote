@@ -115,6 +115,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 		echo "\n";
 	}
 	
-$dbh = null;
+	$dbh = null;
+}
 
 ?>
