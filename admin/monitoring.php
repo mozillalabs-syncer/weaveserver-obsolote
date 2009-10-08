@@ -99,35 +99,30 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	#step 2: for each user, get last update. If greater than the timestamp above, fetch their row and datasize values
 	$last_update = $dbh->prepare("select max(modified) from " . $db_table . " where username = ?");
 	$rows = $dbh->prepare("select count(*) as ct, sum(payload_size)/1024 as size from " . $db_table . " where username = ?");
-	$delete_statement = $dbh->prepare("delete from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or payload is NULL)");
 
 	$data = $dbhw->prepare("replace into usersummary values (?,?,?,?,NOW(),?)");
 	
 	foreach ($usernames as $user)
 	{
-		echo "\tprocessing $user - ";
+		echo "\tprocessing $user\n";
 		$last_update->execute(array($user));
 		$last = $last_update->fetchColumn();
 		$last_update->closeCursor();
 		
 		if ($last_update && !array_key_exists($user, $user_ts) || $last != $user_ts[$user])
 		{
-			$delete_statement->execute(array($user, $deletetime));
-			echo $delete_statement->rowCount();
 			$rows->execute(array($user));
 			list ($count, $datasize) = $rows->fetch();
 			$rows->closeCursor();
 
 			if (!$count)
 			{
-				echo "\n";
 				continue;
 			}
 
 			$data->execute(array($user, $node, $count, $datasize, $last));
 		}	
 		
-		echo "\n";
 		$user_ts[$user] = null; #php has no way to delete an array element. wtf?
 	}
 	
