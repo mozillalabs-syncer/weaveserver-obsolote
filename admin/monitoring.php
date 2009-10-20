@@ -57,7 +57,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 
 	
 	#get the usernames
-	$search = ldap_search($ldap, "dc=mozilla", "(primaryNode=weave:" . $node . ".services.mozilla.com)", array('dn'), 1, 0);
+	$search = ldap_search($ldap, "dc=mozilla", "(primaryNode=weave:" . $node . ")", array('dn'), 1, 0);
 	$results = ldap_get_entries($ldap, $search);
 	$usernames = array();
 	
