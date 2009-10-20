@@ -62,6 +62,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	$search = ldap_search($ldap, "dc=mozilla", "(primaryNode=weave:" . $node . ".services.mozilla.com)", array('dn'), 1, 0);
 	$results = ldap_get_entries($ldap, $search);
 	$usernames = array();
+	$shard_total = 0;
 	
 	foreach ($results as $line)
 	{
@@ -99,6 +100,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	echo " (" . count($usernames) . ")\n";	
 	
 	#step 2: for each user, get last update. If greater than the timestamp above, fetch their row and datasize values
+	$select_statement = $dbh->prepare("select count(*) from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or payload is NULL)");
 	$delete_statement = $dbh->prepare("delete from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or payload is NULL)");
 
 	
@@ -108,13 +110,20 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 		
 		if (array_key_exists($user, $user_ts) && $user_ts[$user] < $abandontime)
 			continue;
+		
+		$select_statement->execute(array($user, $deletetime));
+		$count = $select_statement->fetchColumn();
+		$select_statement->closeCursor();
 
-		$delete_statement->execute(array($user, $deletetime));
-		echo $delete_statement->rowCount();
-
-		echo "\n";
+		if ($count)
+		{
+			$delete_statement->execute(array($user, $deletetime));
+			usleep(250000); #1/4 second to give the slave a break
+		}
+		echo "$count\n";
+		$shard_total += $count;
 	}
-	
+	echo "Shard total: $shard_total\n";
 	$dbh = null;
 }
 
