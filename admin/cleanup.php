@@ -109,7 +109,10 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 		echo "\tprocessing $user - ";
 		
 		if (array_key_exists($user, $user_ts) && $user_ts[$user] < $abandontime)
+		{
+			echo "--\n";
 			continue;
+		}
 		
 		$select_statement->execute(array($user, $deletetime));
 		$count = $select_statement->fetchColumn();
