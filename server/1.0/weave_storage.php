@@ -283,7 +283,11 @@ class WeaveStorageMysql implements WeaveStorage
 			error_log("store_collection_id: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
-		$result = $sth->fetchColumn() + 1;
+		$result = $sth->fetchColumn();
+		if (!$result)
+			$result = 100;
+		$result += 1;
+		
 		$sth->closeCursor();
 
 		$insert_stmt = 'insert into collections (userid, collectionid, name) values (?, ?, ?)';
@@ -388,7 +392,7 @@ class WeaveStorageMysql implements WeaveStorage
 		}
 		
 		$result = $sth->fetchColumn();
-		return round((float)$result, 2);		
+		return $result/100;		
 	}
 
 	function get_collection_list()
@@ -461,7 +465,7 @@ class WeaveStorageMysql implements WeaveStorage
 				else
 					continue;
 			}
-			$collections[$result[0]] = (float)$result[1];
+			$collections[$result[0]] = $result[1]/100;
 		}
 		
 		return $collections;		
@@ -523,7 +527,7 @@ class WeaveStorageMysql implements WeaveStorage
 
 	 		array_push($params, $param_string);
 			array_push($values, $this->_username, $wbo->id(), $collection, $wbo->parentid(),
-							$wbo->predecessorid(), $wbo->sortindex(), $wbo->modified(), 
+							$wbo->predecessorid(), $wbo->sortindex(), $wbo->modified() * 100, 
 							$wbo->payload(), $wbo->payload_size());
 		}
 		
@@ -598,7 +602,7 @@ class WeaveStorageMysql implements WeaveStorage
 				$wbo->modified(microtime(1));
 			}
 			$update_list[] = "modified = ?";
-			$params[] = $wbo->modified();
+			$params[] = $wbo->modified() * 100;
 
 		}
 		
@@ -714,14 +718,14 @@ class WeaveStorageMysql implements WeaveStorage
 				
 		if ($newer)
 		{
-			$select_stmt .= " and newer > ?";
-			$params[] = $newer;
+			$select_stmt .= " and modified > ?";
+			$params[] = $newer * 100;
 		}
 	
 		if ($older)
 		{
 			$select_stmt .= " and modified < ?";
-			$params[] = $older;
+			$params[] = $older * 100;
 		}
 	
 		if ($sort == 'index')
@@ -847,13 +851,13 @@ class WeaveStorageMysql implements WeaveStorage
 		if ($newer)
 		{
 			$select_stmt .= " and modified > ?";
-			$params[] = $newer;
+			$params[] = $newer * 100;
 		}
 	
 		if ($older)
 		{
 			$select_stmt .= " and modified < ?";
-			$params[] = $older;
+			$params[] = $older * 100;
 		}
 	
 		if ($sort == 'index')
