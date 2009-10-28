@@ -360,7 +360,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$collections = array();
 		while ($result = $sth->fetch(PDO::FETCH_NUM))
 		{
-			$base_collection_ids[$result[0]] = $result[1];
+			$this->WEAVE_COLLECTION_NAMES[$result[0]] = $result[1];
 		}
 		
 		return $collections;		
@@ -392,7 +392,7 @@ class WeaveStorageMysql implements WeaveStorage
 		}
 		
 		$result = $sth->fetchColumn();
-		return $result/100;		
+		return $result;		
 	}
 
 	function get_collection_list()
@@ -415,14 +415,14 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
 			{
-				if (!array_key_exists($result, $base_collection_ids) && !user_collections)
+				if (!array_key_exists($result, $this->WEAVE_COLLECTION_NAMES) && !user_collections)
 				{
 					$this->get_users_collection_list();
 					$user_collections = 1;
 				}
 				
-				if (array_key_exists($result[0], $base_collection_ids))
-					$result = $base_collection_ids[$result];
+				if (array_key_exists($result[0], $this->WEAVE_COLLECTION_NAMES))
+					$result = $this->WEAVE_COLLECTION_NAMES[$result];
 				else
 					continue;
 			}
@@ -454,18 +454,18 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
 			{
-				if (!array_key_exists($result[0], $base_collection_ids) && !user_collections)
+				if (!array_key_exists($result[0], $this->WEAVE_COLLECTION_NAMES) && !$user_collections)
 				{
 					$this->get_users_collection_list();
 					$user_collections = 1;
 				}
 				
-				if (array_key_exists($result[0], $base_collection_ids))
-					$result[0] = $base_collection_ids[$result[0]];
+				if (array_key_exists($result[0], $this->WEAVE_COLLECTION_NAMES))
+					$result[0] = $this->WEAVE_COLLECTION_NAMES[$result[0]];
 				else
 					continue;
 			}
-			$collections[$result[0]] = $result[1]/100;
+			$collections[$result[0]] = $result[1];
 		}
 		
 		return $collections;		
@@ -488,18 +488,19 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		
 		$collections = array();
+		$user_collections = 0;
 		while ($result = $sth->fetch(PDO::FETCH_NUM))
 		{
 			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
 			{
-				if (!array_key_exists($result[0], $base_collection_ids) && !user_collections)
+				if (!array_key_exists($result[0], $this->WEAVE_COLLECTION_NAMES) && !$user_collections)
 				{
 					$this->get_users_collection_list();
 					$user_collections = 1;
 				}
 				
-				if (array_key_exists($result[0], $base_collection_ids))
-					$result[0] = $base_collection_ids[$result[0]];
+				if (array_key_exists($result[0], $this->WEAVE_COLLECTION_NAMES))
+					$result[0] = $this->WEAVE_COLLECTION_NAMES[$result[0]];
 				else
 					continue;
 			}
@@ -527,7 +528,7 @@ class WeaveStorageMysql implements WeaveStorage
 
 	 		array_push($params, $param_string);
 			array_push($values, $this->_username, $wbo->id(), $collection, $wbo->parentid(),
-							$wbo->predecessorid(), $wbo->sortindex(), $wbo->modified() * 100, 
+							$wbo->predecessorid(), $wbo->sortindex(), $wbo->modified(), 
 							$wbo->payload(), $wbo->payload_size());
 		}
 		
@@ -602,7 +603,7 @@ class WeaveStorageMysql implements WeaveStorage
 				$wbo->modified(microtime(1));
 			}
 			$update_list[] = "modified = ?";
-			$params[] = $wbo->modified() * 100;
+			$params[] = $wbo->modified();
 
 		}
 		
@@ -719,13 +720,13 @@ class WeaveStorageMysql implements WeaveStorage
 		if ($newer)
 		{
 			$select_stmt .= " and modified > ?";
-			$params[] = $newer * 100;
+			$params[] = $newer;
 		}
 	
 		if ($older)
 		{
 			$select_stmt .= " and modified < ?";
-			$params[] = $older * 100;
+			$params[] = $older;
 		}
 	
 		if ($sort == 'index')
@@ -785,7 +786,6 @@ class WeaveStorageMysql implements WeaveStorage
 		}
 		
 		$result = $sth->fetch(PDO::FETCH_ASSOC);
-		
 		$wbo = new wbo();
 		$wbo->populate($result);
 		return $wbo;
@@ -851,13 +851,13 @@ class WeaveStorageMysql implements WeaveStorage
 		if ($newer)
 		{
 			$select_stmt .= " and modified > ?";
-			$params[] = $newer * 100;
+			$params[] = $newer;
 		}
 	
 		if ($older)
 		{
 			$select_stmt .= " and modified < ?";
-			$params[] = $older * 100;
+			$params[] = $older;
 		}
 	
 		if ($sort == 'index')
@@ -905,7 +905,7 @@ class WeaveStorageMysql implements WeaveStorage
 				$ids[] = $wbo;
 			}
 			else
-				$ids[] = $result{'id'};
+				$ids[] = $result['id'];
 		}		
 		return $ids;
 	}
@@ -1645,6 +1645,5 @@ end;
 		return $result;
 	}
 }
-
 
  ?>

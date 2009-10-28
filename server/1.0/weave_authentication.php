@@ -92,7 +92,7 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 	
 	function authenticate_user($username, $password)
 	{
-		return 1;
+		return $username;
 	}
 	
 	function get_user_alert()

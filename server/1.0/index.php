@@ -106,7 +106,8 @@
 
 	$server_time = round(microtime(1), 2);
 	header("X-Weave-Timestamp: " . $server_time);
-	
+	$server_time = $server_time * 100; #internal representation as bigint
+
 	#Basic path extraction and validation. No point in going on if these are missing
 	$path = '/';
 	if (!empty($_SERVER['PATH_INFO'])) {
@@ -178,7 +179,10 @@
 					exit(json_encode(array($db->get_storage_total(), $db->get_user_quota())));
 				case 'collections':
 					$collection_store = new WeaveCollectionTimestamps($userid, $db);
-					exit(json_encode($collection_store->get_collection_timestamps()));
+					$results = $collection_store->get_collection_timestamps();
+					foreach ($results as $k => $v)
+						$results[$k] = $results[$k]/100;
+					exit(json_encode($results));
 				case 'collection_counts':
 					exit(json_encode($db->get_collection_list_with_counts()));
 				default:
@@ -229,8 +233,8 @@
 					$ids = $db->retrieve_objects($collection, null, $full, $outputter,
 								array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
 								array_key_exists('predecessorid', $_GET) ? $_GET['predecessorid'] : null, 
-								array_key_exists('newer', $_GET) ? $_GET['newer'] : null, 
-								array_key_exists('older', $_GET) ? $_GET['older'] : null, 
+								array_key_exists('newer', $_GET) ? $_GET['newer'] * 100 : null, 
+								array_key_exists('older', $_GET) ? $_GET['older'] * 100 : null, 
 								array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
 								array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
 								array_key_exists('offset', $_GET) ? $_GET['offset'] : null,
@@ -275,7 +279,7 @@
 		$collection_store = new WeaveCollectionTimestamps($userid, $db);
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
-				&& $collection_store->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+				&& $collection_store->get_max_timestamp($collection) >$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'] * 100)
 			report_problem(4, 412);	
 		
 		#use the url if the json object doesn't have an id
@@ -340,7 +344,7 @@
 		$collection_store = new WeaveCollectionTimestamps($userid, $db);
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
-				&& $collection_store->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+				&& $collection_store->get_max_timestamp($collection) > $_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'] * 100)
 			report_problem(4, 412);	
 		
 		
@@ -435,7 +439,7 @@
 		$collection_store = new WeaveCollectionTimestamps($userid, $db);
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
-				&& $collection_store->get_max_timestamp($collection) > round((float)$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'], 2))
+				&& $collection_store->get_max_timestamp($collection) > $_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'] * 100)
 			report_problem(4, 412);	
 
 		$timestamp = round(microtime(1), 2);
@@ -458,8 +462,8 @@
 				$db->delete_objects($collection, null,  
 							array_key_exists('parentid', $_GET) ? $_GET['parentid'] : null, 
 							array_key_exists('predecessorid', $_GET) ? $_GET['predecessorid'] : null, 
-							array_key_exists('newer', $_GET) ? $_GET['newer'] : null, 
-							array_key_exists('older', $_GET) ? $_GET['older'] : null, 
+							array_key_exists('newer', $_GET) ? $_GET['newer'] * 100 : null, 
+							array_key_exists('older', $_GET) ? $_GET['older'] * 100 : null, 
 							array_key_exists('sort', $_GET) ? $_GET['sort'] : null, 
 							array_key_exists('limit', $_GET) ? $_GET['limit'] : null, 
 							array_key_exists('offset', $_GET) ? $_GET['offset'] : null,
