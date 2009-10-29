@@ -470,7 +470,6 @@ class WeaveStorageMysql implements WeaveStorage
 			}
 			$collections[$result[0]] = $result[1];
 		}
-		
 		return $collections;		
 	}
 	
@@ -509,8 +508,8 @@ class WeaveStorageMysql implements WeaveStorage
 				else
 					continue;
 			}
+			$collections[$result[0]] = $result[1];
 		}
-
 		return $collections;		
 	}
 	

@@ -279,7 +279,7 @@
 		$collection_store = new WeaveCollectionTimestamps($userid, $db);
 
 		if (array_key_exists('HTTP_X_IF_UNMODIFIED_SINCE', $_SERVER) 
-				&& $collection_store->get_max_timestamp($collection) >$_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'] * 100)
+				&& $collection_store->get_max_timestamp($collection) > $_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'] * 100)
 			report_problem(4, 412);	
 		
 		#use the url if the json object doesn't have an id
@@ -305,7 +305,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode($wbo->modified());
+			echo json_encode($server_time);
 		}
 		else
 		{
