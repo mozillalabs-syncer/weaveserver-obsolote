@@ -409,9 +409,11 @@ class WeaveStorageMysql implements WeaveStorage
 			error_log("get_collection_list: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
+		$results = $sth->fetchAll(PDO::FETCH_NUM);
+		$sth->closeCursor();
 			
 		$collections = array();
-		while ($result = $sth->fetchColumn())
+		foreach ($results as $result)
 		{
 			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
 			{
@@ -446,11 +448,12 @@ class WeaveStorageMysql implements WeaveStorage
 			error_log("get_collection_list: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
-		
+		$results = $sth->fetchAll(PDO::FETCH_NUM);
+		$sth->closeCursor();
 		
 		$collections = array();
 		$user_collections = 0;
-		while ($result = $sth->fetch(PDO::FETCH_NUM))
+		foreach ($results as $result)
 		{
 			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
 			{
@@ -485,11 +488,13 @@ class WeaveStorageMysql implements WeaveStorage
 			error_log("get_collection_list_with_counts: " . $exception->getMessage());
 			throw new Exception("Database unavailable", 503);
 		}
+		$results = $sth->fetchAll(PDO::FETCH_NUM);
+		$sth->closeCursor();
 		
 		
 		$collections = array();
 		$user_collections = 0;
-		while ($result = $sth->fetch(PDO::FETCH_NUM))
+		foreach ($results as $result)
 		{
 			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
 			{
