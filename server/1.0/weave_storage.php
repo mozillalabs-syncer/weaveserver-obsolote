@@ -231,7 +231,7 @@ class WeaveStorageMysql implements WeaveStorage
 	
 	function get_collection_id($collection)
 	{
-		if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+		if (!defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
 			return $collection;
 		
 		if (!$collection)
@@ -489,7 +489,6 @@ class WeaveStorageMysql implements WeaveStorage
 		}
 		$results = $sth->fetchAll(PDO::FETCH_NUM);
 		$sth->closeCursor();
-		
 		
 		$collections = array();
 		$user_collections = 0;
