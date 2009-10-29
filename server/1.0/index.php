@@ -106,7 +106,7 @@
 
 	$server_time = round(microtime(1), 2);
 	header("X-Weave-Timestamp: " . $server_time);
-	$server_time = $server_time * 100; #internal representation as bigint
+	$storage_time = $server_time * 100; #internal representation as bigint
 
 	#Basic path extraction and validation. No point in going on if these are missing
 	$path = '/';
@@ -286,7 +286,7 @@
 		if (!$wbo->id() && $id) { $wbo->id($id); }
 		
 		$wbo->collection($collection);
-		$wbo->modified($server_time); #current microtime
+		$wbo->modified($storage_time); #current microtime
 		
 		if ($wbo->validate())
 		{
@@ -312,7 +312,7 @@
 			report_problem(8, 400);
 		}
 		
-		$collection_store->memc_update($collection, $server_time);
+		$collection_store->memc_update($collection, $storage_time);
 				
 	}
 	else if ($_SERVER['REQUEST_METHOD'] == 'POST')
@@ -373,7 +373,7 @@
 			}
 			
 			$wbo->collection($collection);
-			$wbo->modified($server_time);
+			$wbo->modified($storage_time);
 			
 			
 			if ($wbo->validate())
@@ -420,7 +420,7 @@
 		
 		$db->commit_transaction();
 
-		$collection_store->memc_update($collection, $server_time);
+		$collection_store->memc_update($collection, $storage_time);
 		
 		echo json_encode(array('success' => $success_ids, 'failed' => $failed_ids));
 	}
@@ -442,7 +442,6 @@
 				&& $collection_store->get_max_timestamp($collection) > $_SERVER['HTTP_X_IF_UNMODIFIED_SINCE'] * 100)
 			report_problem(4, 412);	
 
-		$timestamp = round(microtime(1), 2);
 		if ($id)
 		{
 			try
@@ -453,7 +452,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode($timestamp);
+			echo json_encode($server_time);
 		}
 		else
 		{
@@ -476,7 +475,7 @@
 			{
 				report_problem($e->getMessage(), $e->getCode());
 			}
-			echo json_encode($timestamp);
+			echo json_encode($server_time);
 		}
 	}
 	else
