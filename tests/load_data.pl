@@ -176,6 +176,11 @@ sub user_work
 			$result = $ua->request($req)->content();
 			print "check user existence: $result\n" if $VERBOSE;
 			
+			#get a node
+			$req = GET "$PROTOCOL://$SERVER/$ADMIN_PREFIX/$USERNAME/node/weave";
+			$result = $ua->request($req)->content();
+			print "get a node: $result\n" if $VERBOSE;
+			
 			#change the password
 			$req = POST "$PROTOCOL://$SERVER/$ADMIN_PREFIX/$USERNAME/password";
 			$req->authorization_basic($USERNAME, $PASSWORD);

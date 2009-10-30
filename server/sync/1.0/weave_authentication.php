@@ -362,7 +362,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		// Check if assigned node is same as current host
 		$nd = "";
 		$va = $this->getUserAttribute($username, "primaryNode");
-		$id = $this->getUserAttribute($username, "iserID");
+		$id = $this->getUserAttribute($username, "uidNumber");
 		for ($i = 0; $i < $va["primaryNode"]["count"]; $i++)
 		{
 			$node = $va["primaryNode"][$i];

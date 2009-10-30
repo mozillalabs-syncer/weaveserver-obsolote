@@ -353,7 +353,11 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		{
 			try
 			{
-				$select_stmt = 'select node from available_nodes where ct > 0 order by rand() limit 1';
+				$select_stmt = 'select b2.node from 
+							(select a2.* from (select node, max(recorded) as max_date from active_users group by node) a1 
+							join active_users a2 on a1.node = a2.node and a1.max_date = a2.recorded) b1 
+							right join available_nodes b2 on b1.node = b2.node and b2.ct > 0 order by b1.actives desc limit 1';
+							
 				$sth = $this->_dbh->prepare($select_stmt);
 				$sth->execute();
 			}
@@ -1006,6 +1010,50 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 		return $this->_conn;
 	}
   
+	#oh god, so hacky. Why can't php do multiple ldap statements?
+	function get_new_user_id()
+	{
+	
+		if (defined('WEAVE_REGISTRATION_THROTTLE_DB'))
+		{
+			$hostname = WEAVE_REGISTRATION_THROTTLE_HOST;
+			$dbname = WEAVE_REGISTRATION_THROTTLE_DB;
+			$dbuser = WEAVE_REGISTRATION_THROTTLE_USER;
+			$dbpass = WEAVE_REGISTRATION_THROTTLE_PASS;
+			
+			try
+			{
+				$this->_dbh = new PDO('mysql:host=' . $hostname . ';dbname=' . $dbname, $dbuser, $dbpass);
+				$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			}
+			catch( PDOException $exception )
+			{
+					error_log($exception->getMessage());
+					throw new Exception("Database unavailable", 503);
+			}
+			
+			try
+			{
+				$insert_stmt = 'insert into userids values (null);'; #just an autoincrement column
+							
+				$sth = $this->_dbh->prepare($insert_stmt);
+				$sth->execute();
+				return $sth->lastInsertId();
+			}
+			catch( PDOException $exception )
+			{
+				error_log("get_new_node_location: " . $exception->getMessage());
+				throw new Exception("Database unavailable", 503);
+			}
+			
+		}
+		else
+		{
+			throw new Exception("No way to get userid");
+		}
+	}
+	
+	
 	function create_user($username, $password, $email = "")
 	{
 		$this->authorize();
@@ -1019,6 +1067,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 			'primaryNode' => 'weave:',
 			'rescueNode' => 'weave:',
 			'uid' => $username,
+			'uidNumber' => get_new_user_id(),
 			'userPassword' => $this->generateSSHAPassword($password),
 			'mail-verified' => $key,
 			'account-enabled' => 'Yes',
@@ -1076,10 +1125,10 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 			
 			try
 			{
-				$select_stmt = 'select b1.node from 
+				$select_stmt = 'select b2.node from 
 							(select a2.* from (select node, max(recorded) as max_date from active_users group by node) a1 
 							join active_users a2 on a1.node = a2.node and a1.max_date = a2.recorded) b1 
-							join available_nodes b2 on b1.node = b2.node and b2.ct > 0 order by b1.actives desc limit 1';
+							right join available_nodes b2 on b1.node = b2.node and b2.ct > 0 order by b1.actives desc limit 1';
 							
 				$sth = $this->_dbh->prepare($select_stmt);
 				$sth->execute();
