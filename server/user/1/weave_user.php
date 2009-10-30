@@ -1067,7 +1067,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 			'primaryNode' => 'weave:',
 			'rescueNode' => 'weave:',
 			'uid' => $username,
-			'uidNumber' => get_new_user_id(),
+			'uidNumber' => $this->get_new_user_id(),
 			'userPassword' => $this->generateSSHAPassword($password),
 			'mail-verified' => $key,
 			'account-enabled' => 'Yes',
