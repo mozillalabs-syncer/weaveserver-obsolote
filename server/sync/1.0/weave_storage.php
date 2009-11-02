@@ -150,6 +150,7 @@ class WeaveStorageMysql implements WeaveStorage
 	private $_type = 'read';
 	private $_dbh;
 	private $_db_name = 'wbo';
+	private $_collection_name = 'collections';
 
 	private $WEAVE_COLLECTION_KEYS = array('clients' => 1, 'crypto' => 2, 'forms' => 3, 'history' => 4,
 									'keys' => 5, 'meta' => 6, 'bookmarks' => 7, 'prefs' => 8, 'tabs' => 9,
@@ -179,6 +180,8 @@ class WeaveStorageMysql implements WeaveStorage
 
 		if (defined('WEAVE_MYSQL_STORE_TABLE_NAME'))
 			$this->_db_name = WEAVE_MYSQL_STORE_TABLE_NAME;
+		if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
+			$this->_collection_name = WEAVE_MYSQL_COLLECTION_TABLE_NAME;
 	}
 
 	function open_connection() 
@@ -244,7 +247,7 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		try
 		{
-			$select_stmt = 'select collectionid from collections where userid = :userid and name = :collection';
+			$select_stmt = 'select collectionid from ' . $this->_collection_name . ' where userid = :userid and name = :collection';
 				
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':userid', $this->_username);
@@ -272,7 +275,7 @@ class WeaveStorageMysql implements WeaveStorage
 		#get the current max collection id
 		try
 		{
-			$select_stmt = 'select max(collectionid) from collections where userid = :userid';
+			$select_stmt = 'select max(collectionid) from ' . $this->_collection_name . ' where userid = :userid';
 				
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':userid', $this->_username);
@@ -290,7 +293,7 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		$sth->closeCursor();
 
-		$insert_stmt = 'insert into collections (userid, collectionid, name) values (?, ?, ?)';
+		$insert_stmt = 'insert into ' . $this->_collection_name . ' (userid, collectionid, name) values (?, ?, ?)';
 		$values = array($this->_username, $result, $collection);
 		
 		try
@@ -323,7 +326,7 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		try
 		{
-			$select_stmt = 'select name from collections where userid = :userid and collectionid = :collection';
+			$select_stmt = 'select name from ' . $this->_collection_name . ' where userid = :userid and collectionid = :collection';
 				
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':userid', $this->_username);
@@ -345,7 +348,7 @@ class WeaveStorageMysql implements WeaveStorage
 	{
 		try
 		{
-			$select_stmt = 'select collectionid, name from collections where userid = :userid';
+			$select_stmt = 'select collectionid, name from ' . $this->_collection_name . ' where userid = :userid';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':userid', $this->_username);
 			$sth->execute();

@@ -1038,7 +1038,7 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 							
 				$sth = $this->_dbh->prepare($insert_stmt);
 				$sth->execute();
-				return $sth->lastInsertId();
+				return $this->_dbh->lastInsertId();
 			}
 			catch( PDOException $exception )
 			{
