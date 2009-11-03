@@ -87,10 +87,10 @@ elseif (WEAVE_AUTH_ENGINE == 'sqlite')
 elseif (WEAVE_AUTH_ENGINE == 'mozilla')
 {
 	#mysql connection info
-	if (!defined('WEAVE_REGISTRATION_THROTTLE_HOST')) { define('WEAVE_MYSQL_STORE_READ_HOST', 'localhost'); }
-	if (!defined('WEAVE_REGISTRATION_THROTTLE_DB')) { define('WEAVE_MYSQL_STORE_READ_DB', 'weave'); }
-	if (!defined('WEAVE_REGISTRATION_THROTTLE_USER')) { define('WEAVE_MYSQL_STORE_READ_USER', 'weave'); }
-	if (!defined('WEAVE_REGISTRATION_THROTTLE_PASS')) { define('WEAVE_MYSQL_STORE_READ_PASS', 'weave'); }
+	if (!defined('WEAVE_REGISTRATION_THROTTLE_HOST')) { define('WEAVE_REGISTRATION_THROTTLE_HOST', 'localhost'); }
+	if (!defined('WEAVE_REGISTRATION_THROTTLE_DB')) { define('WEAVE_REGISTRATION_THROTTLE_DB', 'weave'); }
+	if (!defined('WEAVE_REGISTRATION_THROTTLE_USER')) { define('WEAVE_REGISTRATION_THROTTLE_USER', 'weave'); }
+	if (!defined('WEAVE_REGISTRATION_THROTTLE_PASS')) { define('WEAVE_REGISTRATION_THROTTLE_PASS', 'weave'); }
 
 	#ldap connection info
 	if (!defined('WEAVE_LDAP_AUTH_HOST')) { define('WEAVE_LDAP_AUTH_HOST', 'localhost'); }
