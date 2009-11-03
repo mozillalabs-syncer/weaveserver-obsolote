@@ -48,8 +48,8 @@ function get_auth_object()
 			return new WeaveAuthenticationMysql();
 		case 'sqlite':
 			return new WeaveAuthenticationSqlite();
-		case 'ldap':
-			return new WeaveAuthenticationLDAP();
+		case 'mozilla':
+			return new WeaveAuthenticationMozilla();
 		case 'htaccess':
 		case 'none':
 		case '':
@@ -283,7 +283,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 }
 
 # LDAP version of Authentication
-class WeaveAuthenticationLDAP implements WeaveAuthentication
+class WeaveAuthenticationMozilla implements WeaveAuthentication
 {
 	var $_conn;
 	var $_alert;

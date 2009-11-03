@@ -57,6 +57,11 @@ if (WEAVE_STORAGE_ENGINE == 'mysql')
 	if (!defined('WEAVE_MYSQL_STORE_WRITE_DB')) { define('WEAVE_MYSQL_STORE_WRITE_DB', WEAVE_MYSQL_STORE_READ_DB); }
 	if (!defined('WEAVE_MYSQL_STORE_WRITE_USER')) { define('WEAVE_MYSQL_STORE_WRITE_USER', WEAVE_MYSQL_STORE_READ_USER); }
 	if (!defined('WEAVE_MYSQL_STORE_WRITE_PASS')) { define('WEAVE_MYSQL_STORE_WRITE_PASS', WEAVE_MYSQL_STORE_READ_PASS); }
+
+	#keep these commented unless you know that you need multiple tables
+	#if (!defined('WEAVE_MYSQL_STORE_TABLE_NAME')) { define('WEAVE_MYSQL_STORE_TABLE_NAME', 'wbo'); }
+	#if (!defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME')) { define('WEAVE_MYSQL_STORE_TABLE_NAME', 'collections'); }
+
 }
 elseif (WEAVE_STORAGE_ENGINE == 'sqlite')
 {
@@ -67,7 +72,7 @@ elseif (WEAVE_STORAGE_ENGINE == 'sqlite')
 
 
 #engine for auth
-#Acceptable values: mysql | sqlite | ldap | none
+#Acceptable values: mysql | sqlite | mozilla | none
 if (!defined('WEAVE_AUTH_ENGINE')) { define('WEAVE_AUTH_ENGINE', 'mysql'); }
 
 if (WEAVE_AUTH_ENGINE == 'mysql')
@@ -83,14 +88,13 @@ elseif (WEAVE_AUTH_ENGINE == 'sqlite')
 	#path to the sqlite db
 	if (!defined('WEAVE_SQLITE_AUTH_DIRECTORY')) { define('WEAVE_SQLITE_AUTH_DIRECTORY', '/Library/WebServer/dbs'); }
 }
-elseif (WEAVE_AUTH_ENGINE == 'ldap')
+elseif (WEAVE_AUTH_ENGINE == 'mozilla')
 {
 	if (!defined('WEAVE_LDAP_AUTH_HOST')) { define('WEAVE_LDAP_AUTH_HOST', 'localhost'); }
 	if (!defined('WEAVE_LDAP_AUTH_USER')) { define('WEAVE_LDAP_AUTH_USER', 'uid=binduser,ou=logins'); }
 	if (!defined('WEAVE_LDAP_AUTH_PASS')) { define('WEAVE_LDAP_AUTH_PASS', 'password'); }
 	if (!defined('WEAVE_LDAP_AUTH_DN')) { define('WEAVE_LDAP_AUTH_DN', 'dc='); }
 	if (!defined('WEAVE_LDAP_AUTH_USER_PARAM_NAME')) { define('WEAVE_LDAP_AUTH_USER_PARAM_NAME', 'uid'); }
-	if (!defined('WEAVE_LDAP_CLUSTER')) { define('WEAVE_LDAP_CLUSTER', ''); }
 }
 
 #if you are using mysql for both auth and storage and they live in the same table, you may
