@@ -48,8 +48,8 @@ function get_auth_object()
 			return new WeaveAuthenticationMysql();
 		case 'sqlite':
 			return new WeaveAuthenticationSqlite();
-		case 'ldap':
-			return new WeaveAuthenticationLDAP();
+		case 'mozilla':
+			return new WeaveAuthenticationMozilla();
 		case 'htaccess':
 		case 'none':
 		case '':
@@ -929,8 +929,8 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	}
 }
 
-# LDAP version of Authentication
-class WeaveAuthenticationLDAP implements WeaveAuthentication
+# Mozilla LDAP-mysql hybrid version of Authentication
+class WeaveAuthenticationMozilla implements WeaveAuthentication
 {
 	var $_conn;
 	var $_alert;
@@ -1015,15 +1015,11 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	{
 	
 		if (defined('WEAVE_REGISTRATION_THROTTLE_DB'))
-		{
-			$hostname = WEAVE_REGISTRATION_THROTTLE_HOST;
-			$dbname = WEAVE_REGISTRATION_THROTTLE_DB;
-			$dbuser = WEAVE_REGISTRATION_THROTTLE_USER;
-			$dbpass = WEAVE_REGISTRATION_THROTTLE_PASS;
-			
+		{			
 			try
 			{
-				$this->_dbh = new PDO('mysql:host=' . $hostname . ';dbname=' . $dbname, $dbuser, $dbpass);
+				$this->_dbh = new PDO('mysql:host=' . WEAVE_REGISTRATION_THROTTLE_HOST . ';dbname=' . WEAVE_REGISTRATION_THROTTLE_DB,
+											WEAVE_REGISTRATION_THROTTLE_USER, WEAVE_REGISTRATION_THROTTLE_PASS);
 				$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 			}
 			catch( PDOException $exception )
@@ -1060,14 +1056,20 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 
 		$dn = $this->constructUserDN($username);
 		$key = sha1(mt_rand().$username);
-
+		$id = $this->get_new_user_id();
+		if (!$id)
+		{
+			error_log("create_user: unable to get id for user");
+			throw new Exception("Database unavailable", 503);	
+		}
+		
 		$record = array(
 			'cn' => $username,
 			'sn' => $username,
 			'primaryNode' => 'weave:',
 			'rescueNode' => 'weave:',
 			'uid' => $username,
-			'uidNumber' => $this->get_new_user_id(),
+			'uidNumber' => $id,
 			'userPassword' => $this->generateSSHAPassword($password),
 			'mail-verified' => $key,
 			'account-enabled' => 'Yes',
@@ -1107,14 +1109,10 @@ class WeaveAuthenticationLDAP implements WeaveAuthentication
 	{
 		if (defined('WEAVE_REGISTRATION_THROTTLE_DB'))
 		{
-			$hostname = WEAVE_REGISTRATION_THROTTLE_HOST;
-			$dbname = WEAVE_REGISTRATION_THROTTLE_DB;
-			$dbuser = WEAVE_REGISTRATION_THROTTLE_USER;
-			$dbpass = WEAVE_REGISTRATION_THROTTLE_PASS;
-			
 			try
 			{
-				$this->_dbh = new PDO('mysql:host=' . $hostname . ';dbname=' . $dbname, $dbuser, $dbpass);
+				$this->_dbh = new PDO('mysql:host=' . WEAVE_REGISTRATION_THROTTLE_HOST . ';dbname=' . WEAVE_REGISTRATION_THROTTLE_DB,
+											WEAVE_REGISTRATION_THROTTLE_USER, WEAVE_REGISTRATION_THROTTLE_PASS);
 				$this->_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 			}
 			catch( PDOException $exception )
