@@ -223,7 +223,7 @@ sub user_work
 		
 			$id++;
 			my $json = '{"id": "' . $id . '","parentid":"' . ($id%3). '","sortindex":' . $id. ',"depth":1,"payload":"' . $payload . $id . '"}';
-			my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id";
+			my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id";
 			$req->authorization_basic($USERNAME, $PASSWORD);
 			$req->content($json);
 			$req->content_type('application/x-www-form-urlencoded');
