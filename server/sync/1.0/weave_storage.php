@@ -234,7 +234,7 @@ class WeaveStorageMysql implements WeaveStorage
 	
 	function get_collection_id($collection)
 	{
-		if (!defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+		if (!defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			return $collection;
 		
 		if (!$collection)
@@ -313,7 +313,7 @@ class WeaveStorageMysql implements WeaveStorage
 
 	function get_collection_name($collection_id)
 	{
-		if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+		if (!defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			return null;
 		
 		if (!$collection_id)
@@ -418,7 +418,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$collections = array();
 		foreach ($results as $result)
 		{
-			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+			if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			{
 				if (!array_key_exists($result, $this->WEAVE_COLLECTION_NAMES) && !user_collections)
 				{
@@ -458,7 +458,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$user_collections = 0;
 		foreach ($results as $result)
 		{
-			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+			if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			{
 				if (!array_key_exists($result[0], $this->WEAVE_COLLECTION_NAMES) && !$user_collections)
 				{
@@ -497,7 +497,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$user_collections = 0;
 		foreach ($results as $result)
 		{
-			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+			if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			{
 				if (!array_key_exists($result[0], $this->WEAVE_COLLECTION_NAMES) && !$user_collections)
 				{
@@ -529,7 +529,7 @@ class WeaveStorageMysql implements WeaveStorage
 		{
 			$collection = $wbo->collection();
 			
-			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+			if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 				$collection = $this->get_collection_id($collection);
 
 	 		array_push($params, $param_string);
@@ -624,7 +624,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$params[] = $this->_username;
 		
 		$collection = $wbo->collection();
-		if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+		if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			$collection = $this->get_collection_id($collection);
 		$params[] = $collection;
 		
@@ -651,7 +651,7 @@ class WeaveStorageMysql implements WeaveStorage
 
 			$sth->bindParam(':username', $this->_username);
 
-			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+			if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 				$collection = $this->get_collection_id($collection);
 			$sth->bindParam(':collection', $collection);
 
@@ -675,7 +675,7 @@ class WeaveStorageMysql implements WeaveStorage
 		$select_stmt = 'delete from ' . $this->_db_name . ' where username = ? and collection = ?';
 		$params[] = $this->_username;
 
-		if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+		if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			$collection = $this->get_collection_id($collection);
 		$params[] = $collection;
 	
@@ -778,7 +778,7 @@ class WeaveStorageMysql implements WeaveStorage
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $this->_username);
 
-			if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+			if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 				$collection = $this->get_collection_id($collection);
 			$sth->bindParam(':collection', $collection);
 
@@ -806,7 +806,7 @@ class WeaveStorageMysql implements WeaveStorage
 		
 		$select_stmt = "select $full_list from " . $this->_db_name . ' where username = ? and collection = ?';
 		$params[] = $this->_username;
-		if (defined('WEAVE_MYSQL_USE_COLLECTION_TABLE'))
+		if (defined('WEAVE_MYSQL_COLLECTION_TABLE_NAME'))
 			$collection = $this->get_collection_id($collection);
 		$params[] = $collection;
 		
