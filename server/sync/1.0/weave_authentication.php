@@ -376,7 +376,7 @@ class WeaveAuthenticationMozilla implements WeaveAuthentication
 			return 0;
 		
 		if (ldap_bind($this->_conn, $dn, $password))
-			return $id;
+			return $id['uidNumber'][0];
 			
 		return 0;
 	}
