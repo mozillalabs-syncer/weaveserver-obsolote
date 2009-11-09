@@ -1127,7 +1127,7 @@ class WeaveAuthenticationMozilla implements WeaveAuthentication
 				$select_stmt = 'select b2.node from 
 							(select a2.* from (select node, max(recorded) as max_date from active_users group by node) a1 
 							join active_users a2 on a1.node = a2.node and a1.max_date = a2.recorded) b1 
-							join available_nodes b2 on b1.node = b2.node and b2.ct > 0 order by b1.actives desc limit 1';
+							join available_nodes b2 on b1.node = b2.node and b2.ct > 0 order by b1.actives limit 1';
 							
 				$sth = $this->_dbh->prepare($select_stmt);
 				$sth->execute();
