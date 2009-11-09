@@ -934,6 +934,7 @@ class WeaveAuthenticationMozilla implements WeaveAuthentication
 {
 	var $_conn;
 	var $_alert;
+	var $_dbh;
 	
 	private function generateSSHAPassword($password)
 	{
@@ -945,7 +946,7 @@ class WeaveAuthenticationMozilla implements WeaveAuthentication
 	{
 		if (!ldap_bind($this->_conn, WEAVE_LDAP_AUTH_USER.",".
 			WEAVE_LDAP_AUTH_DN, WEAVE_LDAP_AUTH_PASS))
-			throw new Exception("Invalid LDAP Admin", 503);
+			throw new Exception("Database Unavailable", 503);
 	}
 	
  	private function constructUserDN($user)
@@ -992,7 +993,7 @@ class WeaveAuthenticationMozilla implements WeaveAuthentication
 	{
 		$this->_conn = ldap_connect(WEAVE_LDAP_AUTH_HOST);
 		if (!$this->_conn)
-			throw new Exception("Cannot contact LDAP server", 503);
+			throw new Exception("Database Unavailable", 503);
 
 		ldap_set_option($this->_conn, LDAP_OPT_PROTOCOL_VERSION, 3);
 		

@@ -126,10 +126,19 @@ interface WeaveStorage
 #Note that this object does not contain any database setup information. It assumes that the mysql
 #instance is already fully configured
 
+#create table collections 
+#(
+#  userid int(11) NOT NULL',
+#  collectionid smallint NOT NULL,
+#  name varchar(32) NOT NULL,
+#  primary key (userid, collectionid),
+#  key nameindex (userid, name)
+#)
+
 #create table wbo
 #(
-# username varbinary(32),
-# collection varbinary(64),
+# username int,
+# collection smallint,
 # id varbinary(64),
 # parentid varbinary(64),
 # predecessorid varbinary(64),
