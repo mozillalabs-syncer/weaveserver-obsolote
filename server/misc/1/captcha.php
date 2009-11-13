@@ -50,8 +50,9 @@
 		echo json_encode($message);
 		exit;
 	}
-	echo "<body>" . recaptcha_get_html(RECAPTCHA_PUBLIC_KEY) . "</body>";
-
-
+	echo "<body>";
+	echo recaptcha_get_html(RECAPTCHA_PUBLIC_KEY, null, true);
+	echo "</body>";
 
 ?>
+
