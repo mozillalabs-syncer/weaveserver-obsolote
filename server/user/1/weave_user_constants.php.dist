@@ -100,12 +100,12 @@ elseif (WEAVE_AUTH_ENGINE == 'mozilla')
 	if (!defined('WEAVE_LDAP_AUTH_USER_PARAM_NAME')) { define('WEAVE_LDAP_AUTH_USER_PARAM_NAME', 'uid'); }
 }
 
-#leave this blank unless you are setting up a multiple-node setup
-if (!defined('WEAVE_REGISTER_NODE')) { define('WEAVE_REGISTER_NODE', null); }
+#leave this undefined unless you are setting up a multiple-node setup
+#if (!defined('WEAVE_REGISTER_NODE')) { define('WEAVE_REGISTER_NODE', null); }
 
-#if you have only one server location, set this to the hostname and prefix (if any) for the storage server
-# e.g sj-weave01.services.mozilla.com
-if (!defined('WEAVE_REGISTER_STORAGE_LOCATION')) { define('WEAVE_REGISTER_STORAGE_LOCATION', null); }
+#if you have only one server location, leave this undefined or set this to the hostname and prefix (if any) 
+#for the storage server e.g sj-weave01.services.mozilla.com
+#if (!defined('WEAVE_REGISTER_STORAGE_LOCATION')) { define('WEAVE_REGISTER_STORAGE_LOCATION', null); }
 
 #requires the server to use a captcha when creating new accounts
 if (!defined('WEAVE_REGISTER_USE_CAPTCHA')) { define('WEAVE_REGISTER_USE_CAPTCHA', 0); }

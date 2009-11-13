@@ -133,7 +133,7 @@ interface WeaveStorage
 #  name varchar(32) NOT NULL,
 #  primary key (userid, collectionid),
 #  key nameindex (userid, name)
-#)
+#) engine=InnoDB;
 
 #create table wbo
 #(
@@ -146,11 +146,13 @@ interface WeaveStorage
 # depth int default null,
 # modified decimal(12,2),
 # payload text,
+# payload_size int default NULL,
 # primary key(username, collection, id),
 # index parentindex(username, collection, parentid),
 # index predecessorindex(username, collection, predecessorid),
 # index weightindex(username, collection, sortindex),
 # index modified(username, collection, modified)
+# index size_index (username, payload_size)
 #) engine=InnoDB;
 
 class WeaveStorageMysql implements WeaveStorage

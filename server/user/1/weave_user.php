@@ -181,10 +181,13 @@ class WeaveAuthenticationNone implements WeaveAuthentication
 #
 #create table users
 #(
+# id int(11) NOT NULL PRIMARY KEY auto_increment
 # username varchar(32),
-# md5_pass varchar(32),
-# email varchar(64),
+# md5 varbinary(32),
+# email varbinary(64),
 # location text,
+# status tinyint(4) default '1',
+# alert text,
 #) engine=InnoDB;
 #
 
