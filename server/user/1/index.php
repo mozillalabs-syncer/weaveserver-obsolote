@@ -108,7 +108,7 @@
 		if ($auth_user != $url_user)
 			report_problem(5, 400);
 
-		if (!$authdb->authenticate_user($auth_user, $auth_pw))
+		if (!$authdb->authenticate_user($auth_user, utf8_encode($auth_pw)))
 			report_problem('Authentication failed', '401');
 
 		return 1;
@@ -158,8 +158,7 @@
 			$jsonstring = '';
 			while ($data = fread($putdata,2048)) {$jsonstring .= $data;}
 			fclose($putdata);
-			$json = json_decode(utf8_encode($jsonstring), true);
-
+			$json = json_decode($jsonstring, true);
 			if ($json === null)
 				report_problem(6, 400);
 
@@ -187,7 +186,7 @@
 				report_problem(4, 400);
 
 
-			$password = $json['password'];
+			$password = utf8_encode($json['password']);
 			$email = $json['email'];
 
 			if (!verify_password_strength($password, $url_user))
@@ -225,7 +224,7 @@
 					if (!verify_password_strength($new_password, $url_user))
 						report_problem(9, 400);
 					
-					$authdb->update_password($url_user, $new_password);
+					$authdb->update_password($url_user, utf8_encode($new_password));
 					exit("1");
 				case 'email':
 					$postdata = fopen("php://input", "r");

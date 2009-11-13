@@ -68,7 +68,6 @@
 	
 	$auth_user = array_key_exists('PHP_AUTH_USER', $_SERVER) ? $_SERVER['PHP_AUTH_USER'] : null;
 	$auth_pw = array_key_exists('PHP_AUTH_PW', $_SERVER) ? $_SERVER['PHP_AUTH_PW'] : null;
-
 	if (is_null($auth_user) || is_null($auth_pw)) 
 	{
 		/* CGI/FCGI auth workarounds */
@@ -145,7 +144,7 @@
 	try 
 	{
 		$authdb = get_auth_object();
-		if (!$userid = $authdb->authenticate_user($auth_user, $auth_pw))
+		if (!$userid = $authdb->authenticate_user($auth_user, utf8_encode($auth_pw)))
 			report_problem('Authentication failed', '401');
 	}
 	catch(Exception $e)
