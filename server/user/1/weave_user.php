@@ -250,7 +250,7 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 
 		try
 		{
-			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, ' . (WEAVE_REGISTER_NODE ? WEAVE_REGISTER_NODE : '""') . ', 1)';
+			$insert_stmt = 'insert into users (username, md5, email, location, status) values (:username, :md5, :email, ' . (defined('WEAVE_REGISTER_NODE') ? WEAVE_REGISTER_NODE : '""') . ', 1)';
 			$sth = $this->_dbh->prepare($insert_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
