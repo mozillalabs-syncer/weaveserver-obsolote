@@ -126,34 +126,31 @@ interface WeaveStorage
 #Note that this object does not contain any database setup information. It assumes that the mysql
 #instance is already fully configured
 
-#create table collections 
-#(
-#  userid int(11) NOT NULL',
-#  collectionid smallint NOT NULL,
-#  name varchar(32) NOT NULL,
-#  primary key (userid, collectionid),
-#  key nameindex (userid, name)
-#) engine=InnoDB;
-
-#create table wbo
-#(
-# username int,
-# collection smallint,
-# id varbinary(64),
-# parentid varbinary(64),
-# predecessorid varbinary(64),
-# sortindex int default null,
-# depth int default null,
-# modified decimal(12,2),
-# payload text,
-# payload_size int default NULL,
-# primary key(username, collection, id),
-# index parentindex(username, collection, parentid),
-# index predecessorindex(username, collection, predecessorid),
-# index weightindex(username, collection, sortindex),
-# index modified(username, collection, modified)
-# index size_index (username, payload_size)
-#) engine=InnoDB;
+#CREATE TABLE `collections` (
+#  `userid` int(11) NOT NULL,
+#  `collectionid` smallint(6) NOT NULL,
+#  `name` varchar(32) NOT NULL,
+#  PRIMARY KEY  (`userid`,`collectionid`),
+#  KEY `nameindex` (`userid`,`name`)
+#) ENGINE=InnoDB;
+#
+#CREATE TABLE `wbo` (
+#  `username` int(11) NOT NULL,
+#  `collection` smallint(6) NOT NULL default '0',
+#  `id` varbinary(64) NOT NULL default '',
+#  `parentid` varbinary(64) default NULL,
+#  `predecessorid` varbinary(64) default NULL,
+#  `sortindex` int(11) default NULL,
+#  `modified` bigint(20) default NULL,
+#  `payload` longtext,
+#  `payload_size` int(11) default NULL,
+#  PRIMARY KEY  (`username`,`collection`,`id`),
+#  KEY `parentindex` (`username`,`collection`,`parentid`),
+#  KEY `modified` (`username`,`collection`,`modified`),
+#  KEY `weightindex` (`username`,`collection`,`sortindex`),
+#  KEY `predecessorindex` (`username`,`collection`,`predecessorid`),
+#  KEY `size_index` (`username`,`payload_size`)
+#) ENGINE=InnoDB;
 
 class WeaveStorageMysql implements WeaveStorage
 {
