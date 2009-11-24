@@ -57,16 +57,17 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 
 	
 	#get the usernames
-	$search = ldap_search($ldap, "dc=mozilla", "(primaryNode=weave:" . $node . ")", array('dn'), 1, 0);
+	$search = ldap_search($ldap, "dc=mozilla", "(primaryNode=weave:" . $node . ")", array('uid', 'uidnumber'), 0, 0);
 	$results = ldap_get_entries($ldap, $search);
 	$usernames = array();
 	
+		
 	foreach ($results as $line)
 	{
-		if(preg_match('/^uid=(.*?),/', $line['dn'], $match))
-			$usernames[] = $match[1];
+		if (is_array($line) && array_key_exists('uid', $line) && array_key_exists('uidnumber', $line) && $line['uidnumber'][0])
+			$usernames[$line['uid'][0]] = $line['uidnumber'][0];
 	}
-	sort($usernames);
+	ksort($usernames);
 	
 	#connect to the db with the users data. Since we're going node by node, we can share the 
 	#connection with all users in the node.
@@ -84,7 +85,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 
 	#step 1: Get all users last actives from the stats db
 	$user_ts = array();
-	$user_last_ts = $dbhw->prepare("select username, last_active from usersummary where node = ?");
+	$user_last_ts = $dbhw->prepare("select uid, last_active from usersummary where node = ?");
 	$user_last_ts->execute(array($node));
 	while ($result = $user_last_ts->fetch(PDO::FETCH_NUM))
 	{
@@ -100,18 +101,18 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	$last_update = $dbh->prepare("select max(modified) from " . $db_table . " where username = ?");
 	$rows = $dbh->prepare("select count(*) as ct, sum(payload_size)/1024 as size from " . $db_table . " where username = ?");
 
-	$data = $dbhw->prepare("replace into usersummary values (?,?,?,?,NOW(),?)");
+	$data = $dbhw->prepare("replace into usersummary values (?,?,?,?,?,NOW(),?)");
 	
-	foreach ($usernames as $user)
+	foreach ($usernames as $user => $uid)
 	{
 		echo "\tprocessing $user\n";
-		$last_update->execute(array($user));
+		$last_update->execute(array($uid));
 		$last = $last_update->fetchColumn();
 		$last_update->closeCursor();
 		
 		if ($last_update && !array_key_exists($user, $user_ts) || $last != $user_ts[$user])
 		{
-			$rows->execute(array($user));
+			$rows->execute(array($uid));
 			list ($count, $datasize) = $rows->fetch();
 			$rows->closeCursor();
 
@@ -120,15 +121,15 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 				continue;
 			}
 
-			$data->execute(array($user, $node, $count, $datasize, $last));
+			$data->execute(array($uid, $user, $node, $count, $datasize, $last));
 		}	
 		
-		$user_ts[$user] = null; #php has no way to delete an array element. wtf?
+		$user_ts[$uid] = null; #php has no way to delete an array element. wtf?
 	}
 	
 	
 	#step 3: pull out all users in the stats db who are not in the main db (moved or deleted)
-	$delete = $dbhw->prepare("delete from usersummary where username = ?");
+	$delete = $dbhw->prepare("delete from usersummary where uid = ?");
 	
 	foreach ($user_ts as $user => $count)
 	{

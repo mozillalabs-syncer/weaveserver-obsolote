@@ -38,7 +38,7 @@
 # ***** END LICENSE BLOCK *****
 
 #secret using the admin interface, if you are doing so
-if (!defined('WEAVE_REGISTER_ADMIN_SECRET')) { define('WEAVE_REGISTER_ADMIN_SECRET', null); }
+#if (!defined('WEAVE_REGISTER_ADMIN_SECRET')) { define('WEAVE_REGISTER_ADMIN_SECRET', null); }
 
 
 #engine for storage.
