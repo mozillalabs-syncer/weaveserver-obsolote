@@ -66,10 +66,10 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	
 	foreach ($results as $line)
 	{
-		if(preg_match('/^uid=(.*?),/', $line['dn'], $match))
-			$usernames[] = $match[1];
+		if (is_array($line) && array_key_exists('uid', $line) && array_key_exists('uidnumber', $line) && $line['uidnumber'][0])
+			$usernames[$line['uid'][0]] = $line['uidnumber'][0];
 	}
-	sort($usernames);
+	ksort($usernames);
 	
 	#connect to the db with the users data. Since we're going node by node, we can share the 
 	#connection with all users in the node.
@@ -87,7 +87,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 
 	#step 1: Get all users last actives from the stats db
 	$user_ts = array();
-	$user_last_ts = $dbhw->prepare("select username, last_active from usersummary where node = ?");
+	$user_last_ts = $dbhw->prepare("select uid, last_active from usersummary where node = ?");
 	$user_last_ts->execute(array($node));
 	while ($result = $user_last_ts->fetch(PDO::FETCH_NUM))
 	{
@@ -104,23 +104,23 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	$delete_statement = $dbh->prepare("delete from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or payload is NULL)");
 
 	
-	foreach ($usernames as $user)
+	foreach ($usernames as $user => $uid)
 	{
 		echo "\tprocessing $user - ";
 		
-		if (array_key_exists($user, $user_ts) && $user_ts[$user] < $abandontime)
+		if (array_key_exists($uid, $user_ts) && $user_ts[$uid] < $abandontime)
 		{
 			echo "--\n";
 			continue;
 		}
 		
-		$select_statement->execute(array($user, $deletetime));
+		$select_statement->execute(array($uid, $deletetime));
 		$count = $select_statement->fetchColumn();
 		$select_statement->closeCursor();
 
 		if ($count)
 		{
-			$delete_statement->execute(array($user, $deletetime));
+			$delete_statement->execute(array($uid, $deletetime));
 			usleep(250000); #1/4 second to give the slave a break
 		}
 		echo "$count\n";
