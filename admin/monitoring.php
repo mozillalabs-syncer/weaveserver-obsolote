@@ -145,6 +145,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	$total_users = $dbhw->prepare("select count(*) from usersummary where node = ?");
 	$active_users = $dbhw->prepare("select count(*) from usersummary where node = ? and last_active > " . ($time - (60*60*40)));
 	$active_size = $dbhw->prepare("insert into active_users values (NOW(), ?, ?, ?)");
+	$allocations = $dbhw->prepare("update available_nodes set actives = ? where node = ?");
 	
 	$total_users->execute(array($node));
 	list($total) = $total_users->fetch(PDO::FETCH_NUM);
@@ -155,6 +156,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	$active_users->closeCursor();
 	
 	$active_size->execute(array($node, $total, $actives));
+	$allocations->execute(array($actives, $node));
 	
 	
 	$total_size = $dbhw->prepare("select sum(datasize) from usersummary where node = ?");

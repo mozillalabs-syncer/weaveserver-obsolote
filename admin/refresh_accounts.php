@@ -69,9 +69,10 @@
 	{
 		try
 		{
-			$insert_stmt = 'replace into available_nodes (node, ct) values (?,?)';
+			$insert_stmt = 'insert into available_nodes (node, ct) values (?, ?) 
+							on duplicate key update ct = values(ct)';
 			$sth = $dbh->prepare($insert_stmt);
-			$sth->execute(array($node, $config['accounts_per_node']));
+			$sth->execute(array($config['accounts_per_node'], $node));
 		}
 		catch( PDOException $exception )
 		{
