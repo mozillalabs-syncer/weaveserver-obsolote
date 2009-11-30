@@ -3,10 +3,10 @@
 #create table usersummary(username varbinary(32) primary key, rows int, datasize int, checked datetime, last_update decimal(12,2));
 #create table db_size(recorded datetime, cluster varbinary(32), datasize bigint);
 
-#elapsed time before we delete history and form data (30 days) in microseconds
-$deletetime = (time() - (60 * 60 * 24 * 30)) * 100;
+#elapsed time before we delete history and form data (14 days) in microseconds
+$deletetime = (time() - (60 * 60 * 24 * 14)) * 100;
 
-#assuming we run weekly, anyone who hasn't been active in a month and a day no longer has data to be cleaned up
+#assuming we run weekly, anyone who hasn't been active in fourteen days since the last cleanup no longer has data to be cleaned up
 $abandontime = $deletetime - (60 * 60 * 24 * 7 * 100);
 
 #get and parse the config file
@@ -101,7 +101,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	
 	#step 2: for each user, get last update. If greater than the timestamp above, fetch their row and datasize values
 	$select_statement = $dbh->prepare("select count(*) from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or payload is NULL)");
-	$delete_statement = $dbh->prepare("delete from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or payload is NULL)");
+	$delete_statement = $dbh->prepare("delete from " . $db_table . " where username = ? and modified < ? and (collection = 'history' or collection = 'forms' or collection = 'tabs' or payload is NULL)");
 
 	
 	foreach ($usernames as $user => $uid)
