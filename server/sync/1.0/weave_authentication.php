@@ -162,8 +162,9 @@ class WeaveAuthenticationMysql implements WeaveAuthentication
 		{
 			$select_stmt = 'select id, location, status, alert from users where username = :username and md5 = :md5';
 			$sth = $this->_dbh->prepare($select_stmt);
+			$pwhash = md5($password);
 			$sth->bindParam(':username', $username);
-			$sth->bindParam(':md5', md5($password));
+			$sth->bindParam(':md5', $pwhash);
 			$sth->execute();
 		}
 		catch( PDOException $exception )
