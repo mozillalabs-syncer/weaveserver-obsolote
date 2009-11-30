@@ -3,11 +3,11 @@
 #create table usersummary(username varbinary(32) primary key, rows int, datasize int, checked datetime, last_update decimal(12,2));
 #create table db_size(recorded datetime, cluster varbinary(32), datasize bigint);
 
-#elapsed time before we delete history and form data (30 days)
-$deletetime = time() - (60 * 60 * 24 * 30);
+#elapsed time before we delete history and form data (30 days) in microseconds
+$deletetime = (time() - (60 * 60 * 24 * 30)) * 100;
 
 #assuming we run weekly, anyone who hasn't been active in a month and a day no longer has data to be cleaned up
-$abandontime = $deletetime - (60 * 60 * 24 * 7);
+$abandontime = $deletetime - (60 * 60 * 24 * 7 * 100);
 
 #get and parse the config file
 if ($argc < 2)
