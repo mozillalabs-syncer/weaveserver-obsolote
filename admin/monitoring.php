@@ -143,7 +143,7 @@ foreach ($cluster_conf['tables'] as $node => $db_table)
 	
 	$time = time("U");
 	$total_users = $dbhw->prepare("select count(*) from usersummary where node = ?");
-	$active_users = $dbhw->prepare("select count(*) from usersummary where node = ? and last_active > " . ($time - (60*60*40)));
+	$active_users = $dbhw->prepare("select count(*) from usersummary where node = ? and last_active > " . (($time - 144000) * 100)); #active in last 40 hours in microtime
 	$active_size = $dbhw->prepare("insert into active_users values (NOW(), ?, ?, ?)");
 	$allocations = $dbhw->prepare("update available_nodes set actives = ? where node = ?");
 	
