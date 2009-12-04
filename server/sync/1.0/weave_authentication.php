@@ -248,7 +248,7 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 	{
 		try
 		{
-			$select_stmt = 'select id, location, status, alert from users where username = :username and md5 = :md5';
+			$select_stmt = 'select status, alert from users where username = :username and md5 = :md5';
 			$sth = $this->_dbh->prepare($select_stmt);
 			$sth->bindParam(':username', $username);
 			$sth->bindParam(':md5', md5($password));
@@ -269,11 +269,9 @@ class WeaveAuthenticationSqlite implements WeaveAuthentication
 
 		if (!status)
 			return 0;
-			
-		if ($result['location'] && $result['location'] != $_SERVER['HTTP_HOST'])
-			return 0;
 
-		return $result['id'];
+		return $username; #this is pretty horrible. We user username in sqlite and id in mysql. I don't think
+						  #sqlite is long-term supportable in this fashion and we should be trying to move everyone to minimal.
 	}
 
 	function get_user_alert()

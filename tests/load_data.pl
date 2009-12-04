@@ -206,7 +206,7 @@ sub user_work
 		if ($DELETE_USER)
 		{
 			#clear the user
-			$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test");
+			$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history");
 			$req->authorization_basic($USERNAME, $PASSWORD);
 			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
@@ -247,7 +247,7 @@ sub user_work
 		$batch .= "]";
 		
 		
-		$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test";
+		$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history";
 		$req->content($batch);
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -262,7 +262,7 @@ sub user_work
 		
 		#do a replace
 		my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"payload":"' . $payload . $id . '"}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id";
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -275,7 +275,7 @@ sub user_work
 		#do a partial replace
 		
 		my $json = '{"id": "3","depth":"2"}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id";
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -288,7 +288,7 @@ sub user_work
 		#do a replace (timestamp too old)
 		$timestamp = $timestamp - 0.1;
 		my $json = '{"id": "2","parentid":"' . ($id%3). '","sortindex":2,"payload":"' . $payload . $id . '"}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id", "X-If-Unmodified-Since" => $timestamp;
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id", "X-If-Unmodified-Since" => $timestamp;
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -303,7 +303,7 @@ sub user_work
 		#do a bad put (no id)
 		
 		my $json = '{"id": "","parentid":"' . ($id%3). '","payload":"' . $payload . $id . '"}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/";
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -317,7 +317,7 @@ sub user_work
 		#do a bad put (bad json)
 		
 		$json = '{"id": ","parentid":"' . ($id%3). '","modified":"' . ($halftime + int(rand(60))) . '","payload":"' . $payload . $id . '"}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id";
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -331,7 +331,7 @@ sub user_work
 		#do a bad put (no auth)
 		
 		$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . ($halftime + int(rand(60))) . '","payload":"' . $payload . $id . '"}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id";
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id";
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
 		$time1 = [gettimeofday()] if $TIMING;
@@ -343,7 +343,7 @@ sub user_work
 		#do a bad put (wrong pw)
 		
 		$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . ($halftime + int(rand(60))) . '","payload":"' . $payload . $id . '"}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id";
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id";
 		$req->authorization_basic($USERNAME, 'badpassword');
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -356,7 +356,7 @@ sub user_work
 		#do a bad put (payload not json encoded)
 		
 		$json = '{"id": "2","parentid":"' . ($id%3). '","modified":"' . ($halftime + int(rand(60))) . '","payload":["a", "b"]}';
-		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/$id";
+		my $req = PUT "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/$id";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content($json);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -369,7 +369,7 @@ sub user_work
 		
 		#bad post (bad json);
 		$batch =~ s/\]$//;
-		$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test";
+		$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history";
 		$req->content($batch);
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -386,7 +386,7 @@ sub user_work
 		
 		$batch .= "]";
 		$batch =~ s/parentid":"2"/parentid":"3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"/g;
-		$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test";
+		$req = POST "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history";
 		$req->content($batch);
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$req->content_type('application/x-www-form-urlencoded');
@@ -416,7 +416,7 @@ sub user_work
 		print "should return {\"test\":20}: $result\n" if $VERBOSE;
 		
 		# should return ["1", "2" .. "20"]
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -424,7 +424,7 @@ sub user_work
 		print "should return [\"1\", \"2\" .. \"20\"] (in some order): $result\n" if $VERBOSE;
 		
 		# should return ["1", "2" .. "20"]
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?sort=oldest";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/?sort=oldest";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -432,7 +432,7 @@ sub user_work
 		print "should return in order of upload/modified: $result\n" if $VERBOSE;
 		
 		# should return the user id record for #3 (check the depth)
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/3";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/3";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -440,7 +440,7 @@ sub user_work
 		print "should return record 3 (replaced depth): $result\n" if $VERBOSE;
 		
 		# should return the user id record for #4
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/4";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/4";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -448,7 +448,7 @@ sub user_work
 		print "should return record 4: $result\n" if $VERBOSE;
 		
 		# should return the user id record for #4, #5 and #6
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?ids=4,5,6";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/?ids=4,5,6";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -456,7 +456,7 @@ sub user_work
 		print "should return 4, 5 and 6: $result\n" if $VERBOSE;
 		
 		# should return about half the ids
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?newer=$halftime";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/?newer=$halftime";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -464,7 +464,7 @@ sub user_work
 		print "modified after halftime: $result\n" if $VERBOSE;
 		
 		# should return about one-third the ids
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?parentid=1";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/?parentid=1";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -472,7 +472,7 @@ sub user_work
 		print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
 		
 		# mix our params
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?parentid=1&newer=$halftime";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/?parentid=1&newer=$halftime";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -480,7 +480,7 @@ sub user_work
 		print "parentid and modified: $result\n" if $VERBOSE;
 		
 		#as above, but full records
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?parentid=1&newer=$halftime&full=1";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/?parentid=1&newer=$halftime&full=1";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -488,7 +488,7 @@ sub user_work
 		print "parentid and modified (full records): $result\n" if $VERBOSE;
 		
 		#delete the first two with $parentid = 1
-		$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test?parentid=1&limit=2");
+		$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history?parentid=1&limit=2");
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -496,7 +496,7 @@ sub user_work
 		print "delete 2 items: $result\n" if $VERBOSE;
 		
 		#delete records 4 and 6
-		$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test?ids=4,6");
+		$req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history?ids=4,6");
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -504,7 +504,7 @@ sub user_work
 		print "delete ids 4 and 6: $result\n" if $VERBOSE;
 		
 		# should return about one-third the ids, less the two we deleted
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/?parentid=1";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/?parentid=1";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -512,7 +512,7 @@ sub user_work
 		print "parent ids (mod 3 = 1): $result\n" if $VERBOSE;
 		
 		# should return everything left
-		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test/";
+		$req = GET "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history/";
 		$req->authorization_basic($USERNAME, $PASSWORD);
 		$time1 = [gettimeofday()] if $TIMING;
 		$result = $ua->request($req)->content();
@@ -531,7 +531,7 @@ sub user_work
 		if ($DELETE_USER)
 		{
 			#clear the user again
-			my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/test");
+			my $req = HTTP::Request->new(DELETE => "$PROTOCOL://$SERVER/$PREFIX/$USERNAME/storage/history");
 			$req->authorization_basic($USERNAME, $PASSWORD);
 			$time1 = [gettimeofday()] if $TIMING;
 			$result = $ua->request($req)->content();
