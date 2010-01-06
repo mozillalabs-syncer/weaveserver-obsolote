@@ -243,7 +243,7 @@
 		}
 		else if ($_SERVER['REQUEST_METHOD'] == 'DELETE') #delete a user from the server. Need to delete their storage as well.
 		{
-			if (!(defined('WEAVE_REGISTER_ADMIN_SECRET') 
+			if (!(defined('WEAVE_REGISTER_ADMIN_SECRET') && WEAVE_REGISTER_ADMIN_SECRET
 					&& array_key_exists('HTTP_X_WEAVE_SECRET', $_SERVER)
 					&& WEAVE_REGISTER_ADMIN_SECRET == $_SERVER['HTTP_X_WEAVE_SECRET']))
 			{
